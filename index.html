@@ -195,6 +195,13 @@ h1,h2,h3,h4{margin:0; font-family:var(--wide); font-weight:600; text-wrap:balanc
   font-family:var(--mono); font-weight:700; font-size:12px; letter-spacing:-.04em;
 }
 .brand b{font-size:14.5px; font-weight:600; letter-spacing:-.02em}
+/* Logo Crystal Loans: màu xanh navy của logo, giao diện tối thì sáng lên cho đọc được */
+:root{--logo:#125476}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){--logo:#9CCBE8} }
+:root[data-theme="dark"]{--logo:#9CCBE8}
+.brand-logo{height:38px; width:auto; flex:none; display:block}
+.brand-logo .cls-1{fill:var(--logo)}
+.brand-logo .cls-2{fill:none; stroke:var(--logo); stroke-linejoin:round; stroke-width:5.03px}
 .brand small{display:block; font-size:10.5px; color:var(--muted); line-height:1.2}
 .nav{display:flex; flex-direction:column; gap:2px}
 .nav button{
@@ -261,6 +268,29 @@ select.mini,input.mini{
 .seg{display:inline-flex; background:var(--surface-2); border-radius:999px; padding:3px; gap:2px; border:1px solid var(--line)}
 .seg button{padding:4px 13px; border-radius:999px; font-size:12.5px; font-weight:500; color:var(--muted)}
 .seg button[aria-pressed="true"]{background:var(--surface); color:var(--ink); box-shadow:var(--shadow-1)}
+/* Mọi thanh chọn dạng viên thuốc cũng là kính như thanh trang: vệt sáng ở nút đang chọn, rê chuột thì trượt theo */
+.seg{
+  position:relative; background:var(--glass); border:1px solid var(--glass-edge);
+  box-shadow:var(--glass-hi), 0 6px 20px -12px rgba(30,58,138,.3);
+  -webkit-backdrop-filter:var(--glass-blur); backdrop-filter:var(--glass-blur);
+}
+.seg > button{position:relative; z-index:1; transition:color .2s}
+.seg > button:hover{color:var(--ink)}
+.seg > button[aria-pressed="true"]{background:transparent; box-shadow:none; color:var(--ink); font-weight:600}
+.seg-glow{
+  position:absolute; top:0; left:0; width:0; height:0; opacity:0; border-radius:999px; pointer-events:none;
+  background:var(--glow-bg); box-shadow:var(--glow-shadow);
+  transition:transform .45s cubic-bezier(.34,1.45,.64,1), width .45s cubic-bezier(.34,1.45,.64,1), height .2s, opacity .2s;
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))){ .seg{background:var(--surface)} }
+/* kính cần thứ gì phía sau để làm mờ: thanh con và thanh công cụ của lịch có vệt xanh rất nhạt như thanh trên cùng */
+.subbar,.topbar{
+  background:
+    radial-gradient(320px 80px at 8% 120%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 70%),
+    radial-gradient(420px 90px at 70% -40%, color-mix(in srgb, #45C4FF 12%, transparent), transparent 70%),
+    var(--surface);
+}
+.subbar{background-color:var(--surface-2)}
 .period-label{font-size:14px; font-weight:600; letter-spacing:-.01em; white-space:nowrap; flex:none}
 .period-label em{font-style:normal; color:var(--muted); font-weight:400}
 
@@ -409,7 +439,7 @@ select option,select optgroup{background-color:var(--surface); color:var(--ink);
 .chip-x{display:inline-grid; place-items:center; width:16px; height:16px; margin:0 -5px 0 5px; border-radius:50%; font-size:13px; line-height:1; color:var(--muted)}
 .chip-x:hover{background:var(--ot-soft); color:var(--ot)}
 .opt-row select{flex:1 1 auto; min-width:0}
-.f input.opt-add,input.opt-add{width:150px; flex:0 0 150px; padding:4px 11px; border-radius:999px; border:1px dashed var(--line-2); background:transparent; font-size:12.5px}
+.f input.opt-add,input.opt-add{width:150px; flex:0 0 150px; height:32px; padding:0 11px; border-radius:var(--r-sm); border:1px dashed var(--line-2); background:transparent; font-size:12.5px}
 .f input.opt-add:focus,input.opt-add:focus{outline:none; border-style:solid; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft)}
 /* Chọn nhiều như brief trang 4: ô hiện giá trị đã chọn kèm dấu ×, bấm vào mở danh sách. */
 .ms{position:relative}
@@ -422,7 +452,8 @@ select option,select optgroup{background-color:var(--surface); color:var(--ink);
   border:1px solid var(--accent-line); background:var(--accent-soft); color:var(--accent-ink); font-size:12.5px; font-weight:600}
 .ms-x{width:17px; height:17px; border-radius:50%; display:grid; place-items:center; color:var(--accent-ink); font-size:13px; line-height:1}
 .ms-x:hover{background:var(--ot-soft); color:var(--ot)}
-.ms-caret{position:absolute; right:13px; top:19px; transform:translateY(-50%); color:var(--muted); font-size:10px; pointer-events:none}
+.ms-caret{position:absolute; right:0; top:19px; width:30px; height:16px; transform:translateY(-50%); pointer-events:none}
+.ms .ms-caret{padding:0; border:0; background-color:transparent}
 .ms-menu{position:absolute; z-index:40; left:0; right:0; top:calc(100% + 6px); max-height:290px; overflow:auto; padding:6px;
   display:flex; flex-direction:column; gap:2px; background:var(--surface); border:1px solid var(--line-2);
   border-radius:var(--r-sm); box-shadow:var(--shadow-3)}
@@ -432,7 +463,7 @@ select option,select optgroup{background-color:var(--surface); color:var(--ink);
 .ms-opt:hover{background:var(--surface-2)}
 .ms-opt[aria-pressed="true"]{color:var(--accent-ink); font-weight:600}
 .ms-tick{width:13px; color:var(--accent); font-size:12px}
-.ms-menu .opt-add{width:100%; flex:1 1 auto; margin-top:4px}
+.ms .ms-menu input.opt-add{width:100%; flex:0 0 auto; height:34px; margin-top:4px}
 /* Người vay, người bảo lãnh: mỗi người một khối, thông tin riêng nằm ngay dưới tên (brief trang 5, 6). */
 .lf-people{align-items:start; padding-top:14px; border-top:1px solid var(--line)}
 .lf-person{display:flex; flex-direction:column; gap:10px}
@@ -948,6 +979,21 @@ tfoot td{background:var(--surface-2); font-weight:600; border-bottom:none}
 .item-row input[data-itext]{flex:1 1 150px; min-width:0}
 .item-row select{flex:0 1 190px; min-width:0}
 .item-row .btn.icon{flex:0 0 30px}
+/* Ô việc và ô khách trong View Tasks: cùng khuôn với ô chọn người làm ở trên (bo góc, viền mảnh, cao bằng nhau) */
+.crew-h select,.item-row input[data-itext],.item-row select{
+  height:34px; padding:0 11px; border-radius:var(--r-sm); border:1px solid var(--line-2);
+  background:var(--surface); color:var(--ink); font-size:13.5px; box-shadow:none; appearance:none; -webkit-appearance:none;
+}
+.crew-h select,.item-row select,div.f select,select.mini,.ms-caret{
+  padding-right:30px; cursor:pointer; appearance:none; -webkit-appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238698AC' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat; background-position:right 10px center; background-size:14px;
+}
+.item-row input[data-itext]::placeholder{color:var(--muted); opacity:1}
+.crew-h select:hover,.item-row input[data-itext]:hover,.item-row select:hover{border-color:var(--accent-line)}
+.crew-h select:focus,.item-row input[data-itext]:focus,.item-row select:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft)}
+.item-row .it-done{flex:0 0 34px; width:34px; height:34px; border-radius:var(--r-sm)}
+.item-row .btn.icon{flex:0 0 34px; width:34px; height:34px; border-color:var(--line-2); background:var(--surface)}
 .it-done{
   flex:0 0 22px; width:22px; height:22px; border-radius:7px; border:1.5px solid var(--line-2);
   background:var(--surface); color:transparent; font-size:13px; font-weight:700; line-height:1; display:grid; place-items:center;
@@ -967,8 +1013,8 @@ tfoot td{background:var(--surface-2); font-weight:600; border-bottom:none}
 .drow .d-open{display:grid; grid-template-columns:96px 1fr auto; gap:14px; align-items:start; width:100%; text-align:left; padding:12px 4px 6px}
 .drow:hover{background:var(--surface-2)}
 @media (max-width:900px){ .drow .d-open{grid-template-columns:74px 1fr} .d-items{padding-left:14px} }
-/* Glossary: cả mục dùng font Roboto như brief trang 16-18 */
-#view-glossary,#view-glossary input,#view-glossary textarea,#view-glossary button,#view-glossary h1,#view-glossary h2{font-family:"Roboto", var(--sans)}
+/* Glossary: chỉ phần định nghĩa dùng Roboto (brief trang 16); tiêu đề, nút, ô tìm dùng font chung của slide 2 */
+.gloss-area,.gloss-body{font-family:"Roboto", var(--sans)}
 .gloss-page{display:flex; flex-direction:column; gap:16px}
 .gloss-bar{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
 .gloss-count{font-size:13px; color:var(--muted)}
@@ -1137,11 +1183,7 @@ input.pct:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px v
 <div class="app">
   <header class="appbar">
     <div class="brand">
-      <div class="brand-mark">CK</div>
-      <div>
-        <b>Callender</b>
-        <small>Lịch làm &amp; bảng lương</small>
-      </div>
+      <svg class="brand-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 850.42 403.33" role="img" aria-label="Crystal Loans"><g><path class="cls-1" d="M401.17,150.22c0-22.640,16.590-38.920,38.580-38.920,19.300,0,31.150,11.860,35.140,24.470L459.48,142c-2.590-9.370-9.160-15.520-20.160-15.520-12.820,0-21.880,9.490-21.880,23.720s9.060,23.600,22,23.600c11,0,17.460-6,20.050-15.520l15.410,6.250c-4.090,13-16.060,24.470-35.240,24.470C417.76,189,401.170,172.740,401.170,150.220Z"/><path class="cls-1" d="M483.4,112.71H514c16.06,0,26.19,9.27,26.19,22.09,0,11.43-8,19.94-21,21.78l22.31,31H523.72L502.38,156.9h-3.13v30.72H483.4Zm30.19,32.87c7,0,11-3.66,11-9.38s-4-9.48-11-9.48H499.25v18.86Z"/><path class="cls-1" d="M567.48,157l-27.27-44.3H558.1l17.46,30.5,17.36-30.5h17.89l-27.38,44.51v30.4H567.48Z"/><path class="cls-1" d="M609.08,169.73l15.09-5.83c1.94,7.23,7.55,11.21,15.2,11.21,6.79,0,10.78-2.91,10.78-7.76,0-15-37.73-7.43-37.73-34.06,0-12.82,9.49-21.88,26.3-21.88,14,0,23.61,6.9,26.41,17.14L650,134.37c-1.83-6.36-5.93-9.38-12-9.38-6.47,0-9.7,2.91-9.7,7,0,14.34,37.94,6.57,37.94,34.92,0,13.05-10.78,22-28.46,22C623.53,188.91,612.75,182,609.08,169.73Z"/><path class="cls-1" d="M691.75,126.93H669.66V112.71h60.25v14.22H707.82v60.69H691.75Z"/><path class="cls-1" d="M748.23,112.71h19.51L793,187.62H777.23L772,171.56H744.14l-5.28,16.06H723Zm19.41,45.81-9.6-29-9.59,29Z"/><path class="cls-1" d="M800.08,112.71h16.06v60.68h34.28v14.23H800.08Z"/><path class="cls-1" d="M404.4,242.05h16.06v60.68h34.28V317H404.4Z"/><path class="cls-1" d="M455.27,279.56c0-22.1,17.14-38.91,39.13-38.91s39,16.81,39,38.91-17,38.8-39,38.8S455.27,301.55,455.27,279.56Zm61.87-.11c0-13.69-8.94-23.6-22.74-23.6s-22.85,9.91-22.85,23.6c0,13.91,9.27,23.72,22.85,23.72S517.14,293.36,517.14,279.45Z"/><path class="cls-1" d="M559.61,242.05h19.51L604.34,317H588.61l-5.28-16.06H555.52L550.23,317H534.39ZM579,287.86l-9.59-29-9.590,29Z"/><path class="cls-1" d="M627.41,269.64V317H611.46V242.05h13.25l31.59,47.64V242.05h16V317H658.88Z"/><path class="cls-1" d="M681.19,299.07l15.09-5.82c1.94,7.22,7.55,11.21,15.2,11.21,6.79,0,10.78-2.91,10.78-7.76,0-15-37.73-7.44-37.73-34.06,0-12.83,9.49-21.88,26.3-21.88,14,0,23.61,6.89,26.41,17.13l-15.09,5.83c-1.83-6.36-5.93-9.38-12-9.38-6.47,0-9.7,2.91-9.7,7,0,14.34,37.94,6.58,37.94,34.93,0,13-10.78,22-28.46,22C695.64,318.26,684.86,311.36,681.19,299.07Z"/></g><g><path class="cls-2" d="M15.86,201.67a99.48,99.48,0,0,1,0-99.53A99.46,99.46,0,0,1,15.86,201.67Z"/><path class="cls-2" d="M15.86,301.27a99.46,99.46,0,0,1,0-99.52A99.44,99.44,0,0,1,15.86,301.27Z"/><path class="cls-2" d="M102,151.82a99.44,99.44,0,0,1,0-99.52A99.44,99.44,0,0,1,102,151.82Z"/><path class="cls-2" d="M188.22,201.58a99.44,99.44,0,0,1,0-99.52A99.44,99.44,0,0,1,188.22,201.58Z"/><path class="cls-2" d="M188.22,301.13a99.44,99.44,0,0,1,0-99.52A99.44,99.44,0,0,1,188.22,301.13Z"/><path class="cls-2" d="M188.26,397.88c-18.4-31.91-17.21-66.95,0-96.72C205.39,330.93,206.67,366,188.26,397.88Z"/><path class="cls-2" d="M188.26,102.06A99.46,99.46,0,0,1,102.07,52.3,99.44,99.44,0,0,1,188.26,102.06Z"/><path class="cls-2" d="M188.26,2.51v0c-.52.93-1.08,1.84-1.65,2.74S185.47,7.09,184.87,8c-1.18,1.79-2.44,3.55-3.75,5.23-.57.76-1.15,1.51-1.76,2.24l-.15.17c-.42.56-.88,1.09-1.35,1.61s-1.09,1.29-1.64,1.89c-.18.2-.38.4-.53.6a2.05,2.05,0,0,0-.2.23c-.58.58-1.1,1.16-1.66,1.73a15.78,15.78,0,0,1-1.13,1.19c-.55.57-1.13,1.13-1.71,1.68s-1.16,1.11-1.73,1.64-1.21,1.08-1.81,1.6c-1,.86-2,1.690-3,2.49s-2,1.61-3.07,2.39c-.5.38-1,.73-1.48,1.08-1,.71-2,1.39-3,2a1.61,1.61,0,0,1-.48.3c-.85.61-1.76,1.16-2.64,1.69l-.43.27c-.85.53-1.73,1-2.61,1.51-1.28.73-2.59,1.44-3.92,2.11-1,.48-1.94,1-2.92,1.41s-2,.91-3,1.33c-2,.86-4.07,1.66-6.16,2.37l-.42.15c-.86.3-1.71.58-2.59.85q-4.730,1.470-9.580,2.490c-1.09.23-2.17.43-3.27.61s-2.22.35-3.32.5-2.21.3-3.35.4c-.85.1-1.68.18-2.54.23-.6,0-1.23.1-1.830.12-1,.05-1.94.1-2.920.13s-2.380-.19-3.360-.19C120.05,20.16,153.89,2.54,188.26,2.51Z"/><path class="cls-2" d="M188.27,102.09c-18.41-31.91-17.18-67.33,0-97.1C205.44,34.76,206.67,70.18,188.27,102.09Z"/><path class="cls-2" d="M101.65,52.06a99,99,0,0,1-85.77,50C33.07,72.32,64.81,52.06,101.65,52.06Z"/><path class="cls-2" d="M102.07,151.8a99.4,99.4,0,0,1,0-99.5A99.4,99.4,0,0,1,102.07,151.8Z"/><path class="cls-2" d="M360.65,102.09a99.49,99.49,0,0,1-86.19-49.76A99.42,99.42,0,0,1,360.65,102.09Z"/><path class="cls-2" d="M274.46,52.33a99.49,99.49,0,0,1-86.2,49.76v0A99.52,99.52,0,0,1,274.46,52.33Z"/><path class="cls-2" d="M274.46,52.33a99.44,99.44,0,0,1-86.2-49.79A99.43,99.43,0,0,1,274.46,52.33Z"/><path class="cls-2" d="M274.46,151.82a99.38,99.38,0,0,1,0-99.49A99.38,99.38,0,0,1,274.46,151.82Z"/><path class="cls-2" d="M360.65,201.67a99.48,99.48,0,0,1,0-99.53A99.43,99.43,0,0,1,360.65,201.67Z"/><path class="cls-2" d="M360.65,301.27a99.46,99.46,0,0,1,0-99.52A99.41,99.41,0,0,1,360.65,301.27Z"/><path class="cls-2" d="M188.26,201.64a99.47,99.47,0,0,1-86.19-49.76A99.45,99.45,0,0,1,188.26,201.64Z"/><path class="cls-2" d="M188.26,102.09v0c-.53.93-1.08,1.83-1.66,2.74s-1.13,1.81-1.73,2.69c-1.19,1.78-2.44,3.54-3.75,5.23-.58.75-1.16,1.5-1.76,2.23-.05,0-.1.13-.15.18-.43.55-.88,1.08-1.36,1.61s-1.08,1.28-1.63,1.89c-.18.2-.38.4-.53.6a1.33,1.33,0,0,0-.2.22c-.58.58-1.110,1.16-1.66,1.74-.35.4-.73.8-1.13,1.18-.56.58-1.13,1.13-1.71,1.69s-1.16,1.1-1.74,1.63-1.2,1.08-1.81,1.61c-1,.85-2,1.68-3,2.49s-2,1.61-3.06,2.39c-.51.38-1,.73-1.49,1.08-1,.7-2,1.38-3,2a2.410,2.410,0,0,1-.48.3c-.86.6-1.76,1.15-2.64,1.68l-.43.28c-.85.53-1.73,1-2.61,1.51-1.29.73-2.59,1.43-3.93,2.11-1,.48-1.93,1-2.91,1.41s-2,.9-3,1.33c-2,.86-4.07,1.66-6.16,2.36l-.43.15c-.85.31-1.71.58-2.59.86q-4.71,1.47-9.58,2.49c-1.08.23-2.16.43-3.27.6s-2.21.35-3.32.51-2.21.3-3.34.4c-.85.1-1.68.17-2.54.22-.6.05-1.23.1-1.83.13-1,.05-1.94.1-2.92.13s-2,0-2.94,0A99.44,99.44,0,0,1,188.26,102.09Z"/><path class="cls-2" d="M102.07,151.88A98.19,98.19,0,0,1,16.5,201.35,98.18,98.18,0,0,1,102.07,151.88Z"/><path class="cls-2" d="M102.07,151.88c-36.84,0-66.57-18.53-83.77-48.3C52.67,103.61,83.66,120,102.07,151.88Z"/><path class="cls-2" d="M102.07,251.37a99.36,99.36,0,0,1,0-99.49A99.41,99.41,0,0,1,102.07,251.37Z"/><path class="cls-2" d="M360.49,201.69a99.22,99.22,0,0,1-86-49.79A99.23,99.23,0,0,1,360.49,201.69Z"/><path class="cls-2" d="M358.36,103.34c-17.2,29.77-47.07,48.56-83.9,48.56C292.86,120,324,103.37,358.36,103.34Z"/><path class="cls-2" d="M274.46,151.9a99.48,99.48,0,0,1-86.2,49.76v0A99.53,99.53,0,0,1,274.46,151.9Z"/><path class="cls-2" d="M274.46,151.9a99.43,99.43,0,0,1-86.2-49.78A99.44,99.44,0,0,1,274.46,151.9Z"/><path class="cls-2" d="M274.46,251.4a99.38,99.38,0,0,1,0-99.5A99.43,99.43,0,0,1,274.46,251.4Z"/><path class="cls-2" d="M188.26,301.21a99.48,99.48,0,0,1-86.2-49.76A99.47,99.47,0,0,1,188.26,301.21Z"/><path class="cls-2" d="M188.26,201.67v0c-.53.93-1.08,1.84-1.66,2.74s-1.13,1.81-1.74,2.69c-1.18,1.79-2.44,3.55-3.74,5.23-.58.76-1.16,1.51-1.76,2.24-.05,0-.1.13-.15.18-.43.55-.88,1.08-1.36,1.6s-1.08,1.29-1.64,1.89c-.17.2-.37.4-.52.6a1.46,1.46,0,0,0-.21.23c-.57.58-1.1,1.16-1.66,1.74a15.57,15.57,0,0,1-1.13,1.18c-.55.58-1.13,1.13-1.71,1.68s-1.15,1.11-1.73,1.64l-1.81,1.61c-1,.85-2,1.68-3,2.48s-2,1.61-3.07,2.39c-.5.38-1,.73-1.48,1.08-1,.71-2,1.39-3,2a1.7,1.7,0,0,1-.47.3c-.86.61-1.76,1.16-2.65,1.69l-.42.27c-.86.53-1.74,1-2.62,1.51q-1.92,1.1-3.92,2.12c-1,.47-1.94,1-2.92,1.4s-2,.91-3,1.34c-2,.85-4.08,1.66-6.16,2.36l-.43.15c-.86.3-1.71.58-2.59.86q-4.71,1.47-9.58,2.48c-1.08.23-2.16.43-3.27.61s-2.21.35-3.32.5-2.21.3-3.34.4c-.86.1-1.69.18-2.54.23-.61,0-1.24.1-1.84.13-1,.05-1.93.1-2.92.12s-2,0-2.94,0A99.44,99.44,0,0,1,188.26,201.67Z"/><path class="cls-2" d="M102.06,251.45c-18.4,31.88-50.24,46.93-84.61,46.95C34.65,268.66,65.23,251.45,102.06,251.45Z"/><path class="cls-2" d="M102.06,251.45c-36.83,0-68.36-19.93-85.56-49.7A98.32,98.32,0,0,1,102.06,251.45Z"/><path class="cls-2" d="M102.06,351a99.43,99.43,0,0,1,0-99.5A99.38,99.38,0,0,1,102.06,351Z"/><path class="cls-2" d="M356.83,299.38c-34.37,0-64-16-82.38-47.9C311.29,251.48,339.64,269.63,356.83,299.38Z"/><path class="cls-2" d="M360.49,201.69a99.17,99.17,0,0,1-86,49.79A99.2,99.2,0,0,1,360.49,201.69Z"/><path class="cls-2" d="M274.45,251.48a99.47,99.47,0,0,1-86.19,49.76v0A99.51,99.51,0,0,1,274.45,251.48Z"/><path class="cls-2" d="M274.45,251.48a99.43,99.43,0,0,1-86.19-49.79A99.44,99.44,0,0,1,274.45,251.48Z"/><path class="cls-2" d="M274.45,351a99.41,99.41,0,0,1,0-99.49A99.36,99.36,0,0,1,274.45,351Z"/><path class="cls-2" d="M188.25,400.79a99.61,99.61,0,0,1-86.34-49.64A99.56,99.56,0,0,1,188.25,400.79Z"/><path class="cls-2" d="M188.25,301.24v0c-.52.93-1.08,1.83-1.66,2.74s-1.13,1.81-1.73,2.69c-1.18,1.78-2.44,3.54-3.75,5.23-.58.75-1.15,1.51-1.76,2.24l-.15.17c-.43.55-.88,1.08-1.36,1.61s-1.08,1.28-1.63,1.89c-.18.2-.38.4-.53.6a1.43,1.43,0,0,0-.2.23c-.58.57-1.11,1.15-1.66,1.73a15.66,15.66,0,0,1-1.13,1.18c-.55.58-1.13,1.13-1.71,1.69s-1.16,1.1-1.74,1.63-1.2,1.08-1.81,1.61c-1,.86-2,1.69-3,2.49s-2,1.61-3.07,2.39c-.5.38-1,.73-1.48,1.08q-1.47,1-3,2a2.15,2.15,0,0,1-.48.3c-.85.6-1.76,1.16-2.64,1.68l-.43.28c-.85.53-1.73,1-2.61,1.51q-1.92,1.1-3.92,2.11c-1,.48-1.94,1-2.92,1.41s-2,.9-3,1.33c-2,.86-4.07,1.66-6.16,2.36l-.43.16c-.85.3-1.71.57-2.59.85q-4.71,1.47-9.58,2.49c-1.08.23-2.16.43-3.26.6s-2.22.36-3.32.51-2.22.3-3.35.4c-.85.1-1.68.17-2.54.22-.6.06-1.23.11-1.83.13-1,0-1.94.1-2.92.13s-2,0-2.94,0A99.44,99.44,0,0,1,188.25,301.24Z"/><path class="cls-2" d="M101.91,351.15a99.31,99.31,0,0,1-86-49.91A99.32,99.32,0,0,1,101.91,351.15Z"/><path class="cls-2" d="M360.64,301.27a99.42,99.42,0,0,1-86.19,49.78A99.41,99.41,0,0,1,360.64,301.27Z"/><path class="cls-2" d="M274.45,351.2a99.31,99.31,0,0,1-86.2,49.61v0A99.41,99.41,0,0,1,274.45,351.2Z"/><path class="cls-2" d="M274.26,351a99,99,0,0,1-86-49.7A99,99,0,0,1,274.26,351Z"/></g></svg>
     </div>
     <nav class="tabs pillnav" id="nav">
       <span class="pillnav__glow" id="navGlow" aria-hidden="true"></span>
@@ -1481,6 +1523,20 @@ function moveGlow(b) {
   g.style.opacity = "1";
 }
 const glowActive = () => moveGlow($('#nav button[aria-current="true"]'));
+// Vệt kính cho các thanh .seg: tự thêm vào mọi thanh (kể cả thanh vừa vẽ lại), nằm ở nút đang chọn.
+function segGlow(seg, b) {
+  let g = seg.querySelector(":scope > .seg-glow");
+  if (!g) { g = document.createElement("span"); g.className = "seg-glow"; g.setAttribute("aria-hidden", "true"); seg.prepend(g); }
+  b = b || seg.querySelector(':scope > button[aria-pressed="true"]');
+  if (!b || !b.offsetWidth) { g.style.opacity = "0"; return; }
+  g.style.width = b.offsetWidth + "px";
+  g.style.height = b.offsetHeight + "px";
+  g.style.transform = `translate(${b.offsetLeft}px, ${b.offsetTop}px)`;
+  g.style.opacity = "1";
+}
+let segRAF = 0;
+// gom nhiều thay đổi liền nhau thành một lần đặt lại (đọc offsetWidth đã buộc trình duyệt tính bố cục xong)
+const syncSegs = () => { if (segRAF) return; segRAF = 1; queueMicrotask(() => { segRAF = 0; $$(".seg").forEach(x => segGlow(x)); }); };
 function setView(v) {
   closeQuick(); closePalette(); closeColMenu();
   state.view = v;
@@ -1530,6 +1586,7 @@ function render() {
   if (state.view === "pay") renderPay();
   if (state.view === "set") renderSettings();
   if (state.view === "loan") renderLoan();
+  syncSegs();   // thanh .seg vừa hiện ra hoặc vừa vẽ lại: đặt vệt kính vào nút đang chọn
 }
 
 /* ============================== sidebar ============================== */
@@ -3322,7 +3379,7 @@ function msInner(f, val, attrs, open) {
   return `<div class="ms-box" data-msopen role="button" tabindex="0" aria-haspopup="listbox" aria-expanded="${!!open}">
       ${arr.length ? arr.map(o => `<span class="ms-chip">${esc(o)}<button type="button" class="ms-x" ${attrs} data-v="${esc(o)}" aria-label="Bỏ ${esc(o)}">×</button></span>`).join("")
       : `<span class="ms-ph">— chọn —</span>`}
-      <span class="ms-caret" aria-hidden="true">▼</span></div>
+      <span class="ms-caret" aria-hidden="true"></span></div>
     <div class="ms-menu ${open ? "" : "hide"}" role="listbox">
       ${opts.map(o => `<button type="button" class="ms-opt" ${attrs} data-v="${esc(o)}" aria-pressed="${arr.includes(o)}">
         <span class="ms-tick" aria-hidden="true">${arr.includes(o) ? "✓" : ""}</span><span style="flex:1">${esc(o)}</span>${!used.has(o) && (f.options || []).includes(o)
@@ -6372,6 +6429,7 @@ function setLang(lang) {
   document.documentElement.lang = lang === "en" ? "en" : "vi";
   render();   // vẽ lại để ô cú pháp (có/yes, (trống)/(empty)) theo đúng ngôn ngữ
   if (lang === "en") i18nApply(document.body); else i18nRestore();
+  syncSegs(); glowActive();   // chữ đổi độ rộng
 }
 // Chữ mới do app vẽ ra cũng được dịch ngay.
 new MutationObserver(ms => {
@@ -6418,6 +6476,12 @@ new MutationObserver(ms => {
   // Chữ trên tab đổi độ rộng khi đổi ngôn ngữ hoặc khi font tải xong: đặt lại vệt kính theo.
   if (window.ResizeObserver) { const ro = new ResizeObserver(() => glowActive()); $$("#nav button").forEach(b => ro.observe(b)); }
   addEventListener("resize", glowActive);
+  // thanh .seg: đổi nút đang chọn, vẽ lại, ẩn hiện hay đổi ngôn ngữ đều đặt lại vệt kính
+  new MutationObserver(syncSegs).observe(document.body, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ["aria-pressed", "class"] });
+  document.addEventListener("mouseover", e => { const b = e.target.closest && e.target.closest(".seg > button"); if (b) segGlow(b.parentElement, b); });
+  document.addEventListener("mouseout", e => { const x = e.target.closest && e.target.closest(".seg"); if (x && !x.contains(e.relatedTarget)) segGlow(x); });
+  addEventListener("resize", syncSegs);
+  syncSegs();
   setView(state.view);   // đồng bộ tab, thanh con và cột lịch ngay khi mở trang
   initStore();
   setInterval(() => {
