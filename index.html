@@ -2327,7 +2327,7 @@ function rowHTML(t) {
       <button type="button" class="it-done ${it.done ? "on" : ""}" data-toggleitem="${t.id}|${it.id}"
         aria-pressed="${it.done}" title="${it.done ? "Đã xong" : "Chưa xong"}">${it.done ? "✓" : ""}</button>
       <span translate="no" class="it-t ${it.done ? "got" : ""}">${esc(it.text || "Việc")}</span>
-      ${it.clientId ? `<button type="button" class="it-cl" data-peek="client:${it.clientId}" title="Mở hồ sơ khách">${esc((cl(it.clientId) || {}).name || "Khách")}</button>` : ""}
+      ${it.clientId ? `<button type="button" class="it-cl" data-openclient="${it.clientId}" title="Mở hồ sơ khách">${esc((cl(it.clientId) || {}).name || "Khách")}</button>` : ""}
     </li>`).join("")}</ul>` : ""}
   </div>`;
 }
@@ -2414,7 +2414,7 @@ function renderTasks() {
           <tbody>${rows.map(r => `<tr class="${r.it.done ? "is-done" : ""}">
             <td class="num">${dmy(r.t.date)}</td>
             <td><span translate="no" class="it-t ${r.it.done ? "got" : ""}">${esc(r.it.text || "Việc")}</span></td>
-            <td>${r.it.clientId ? `<button type="button" class="it-cl" data-peek="client:${r.it.clientId}">${esc((cl(r.it.clientId) || {}).name || "Khách")}</button>` : muted("—")}</td>
+            <td>${r.it.clientId ? `<button type="button" class="it-cl" data-openclient="${r.it.clientId}" title="Mở hồ sơ khách">${esc((cl(r.it.clientId) || {}).name || "Khách")}</button>` : muted("—")}</td>
             ${showCo ? `<td><span class="tk-co"><i class="swatch" style="background:${coColor(r.t.companyId)}"></i>${esc(coName(r.t.companyId))}</span></td>` : ""}
             <td>${statusSel(r.t.id, r.it.id, r.it.done)}</td>
             <td><button type="button" class="btn icon ghost" data-task="${r.t.id}" title="Chi tiết ca" aria-label="Chi tiết ca">↗</button></td>
@@ -3434,6 +3434,11 @@ function caseClientId(c) {
   const names = loanPeople(c).map(x => nrm(x.name)).filter(Boolean);
   const hit = state.clients.find(x => names.includes(nrm(x.name)));
   return hit ? hit.id : "";
+}
+// Hồ sơ vay của một khách trên lịch (nếu đã có).
+function clientCase(cid) {
+  const c = cl(cid);
+  return (c && c.caseId && state.loanCases.find(k => k.id === c.caseId)) || state.loanCases.find(k => caseClientId(k) === cid) || null;
 }
 // Mọi việc trên lịch có gắn khách này, mới nhất trước.
 function caseJobs(c) {
@@ -5784,11 +5789,13 @@ document.addEventListener("click", e => {
     renderMiniCal(); return;
   }
 
-  const oc = e.target.closest("[data-opencase], [data-newcase]");
+  const oc = e.target.closest("[data-opencase], [data-newcase], [data-openclient]");
   if (oc) {
-    const tid = oc.dataset.opencase;
+    // bấm tên khách ở danh sách việc: mở hồ sơ của khách đó, chưa có thì tạo mới
+    const own = oc.dataset.openclient, hit = own ? clientCase(own) : null;
+    const tid = own ? (hit && hit.id) : oc.dataset.opencase;
     if (!tid) {
-      const cid = oc.dataset.newcase, sl = loanSchema().slots[0];
+      const cid = own || oc.dataset.newcase, sl = loanSchema().slots[0];
       const k = put("loanCases", {
         createdAt: new Date().toISOString(), clientId: cid, values: {}, received: {},
         people: sl ? { [sl.id]: { name: (cl(cid) || {}).name || "", values: {} } } : {},
