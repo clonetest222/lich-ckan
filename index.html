@@ -327,7 +327,8 @@ select.mini,input.mini{
 .lf-person .sg-h{margin-bottom:8px}
 .loan-out{display:flex; flex-direction:column; gap:16px}
 .case-row{cursor:pointer}
-.md-link{text-decoration:underline; text-underline-offset:3px; text-decoration-thickness:1px}
+.md-link{text-decoration:none; text-underline-offset:3px; text-decoration-thickness:1px}
+.case-row:hover .md-link{text-decoration:underline}
 .case-row:hover td{background:var(--surface-2)}
 .stage-bar{height:6px; border-radius:999px; background:var(--surface-3); overflow:hidden; margin-bottom:14px}
 .stage-bar i{display:block; height:100%; background:var(--accent); border-radius:999px}
@@ -370,28 +371,37 @@ select.mini,input.mini{
 .sheet th.drop-left{box-shadow:inset 2px 0 0 var(--accent)}
 .sheet th.drop-right{box-shadow:inset -2px 0 0 var(--accent)}
 .col-ins{
-  position:absolute; top:4px; left:-9px; width:18px; height:18px; border-radius:50%; z-index:5;
-  background:var(--accent); color:#fff; font-size:13px; line-height:1; display:none; place-items:center;
+  position:absolute; top:50%; left:-10px; transform:translateY(-50%); width:20px; height:20px; border-radius:6px; z-index:5;
+  background:var(--accent); color:#fff; font-size:14px; line-height:1; display:none; place-items:center; padding:0;
+  box-shadow:0 0 0 3px var(--surface-2);
 }
-.col-ins.right{left:auto; right:-9px}
-.sheet th[data-colkey]:hover .col-ins,.col-ins:focus{display:grid}
-.sheet td.sh-idx .row-ins{
-  position:absolute; left:50%; bottom:-9px; transform:translateX(-50%); width:18px; height:18px; border-radius:50%;
-  background:var(--accent); color:#fff; font-size:13px; line-height:1; display:none; place-items:center; z-index:5; inset:auto auto -9px 50%;
+/* đường kẻ đầu tiên: dấu + nằm trong ô góc, sát mép phải */
+.sheet th.sh-idx .col-ins{left:auto; right:3px}
+.sheet th[data-colkey]:hover .col-ins,.sheet th.sh-idx:hover .col-ins,.col-ins:focus-visible{display:grid}
+.col-ins:hover{background:var(--accent-ink)}
+/* dòng: hai nút nhỏ cạnh nhau trong cột số thứ tự, chỉ hiện khi rê chuột lên dòng */
+.sheet td.sh-idx .row-ins,.sheet td.sh-idx button[data-rowdel]{
+  position:absolute; top:50%; transform:translateY(-50%); width:20px; height:20px; border-radius:6px;
+  display:none; place-items:center; padding:0; font-size:13px; line-height:1; z-index:2;
 }
-.sheet tr:hover td.sh-idx .row-ins,.row-ins:focus{display:grid}
+.sheet td.sh-idx .row-ins{left:5px; background:var(--accent-soft); color:var(--accent-ink)}
+.sheet td.sh-idx .row-ins:hover{background:var(--accent); color:#fff}
+.sheet td.sh-idx button[data-rowdel]{right:5px; background:var(--ot-soft); color:var(--ot)}
+.sheet td.sh-idx button[data-rowdel]:hover{background:var(--ot); color:#fff}
+.sheet tr:hover td.sh-idx .row-ins,.sheet tr:hover td.sh-idx button[data-rowdel],
+.sheet td.sh-idx .row-ins:focus-visible,.sheet td.sh-idx button[data-rowdel]:focus-visible{display:grid}
 .sheet td.sh-idx{position:sticky}
 .syntax-help > summary{cursor:pointer; list-style:none; display:flex; align-items:center; gap:6px; font-weight:600; color:var(--ink-2)}
 .syntax-help > summary::-webkit-details-marker{display:none}
 .syntax-help[open] > summary{margin-bottom:8px}
 .syntax-help[open] .stage-chev{transform:rotate(90deg)}
-.sheet .sh-h{display:flex; align-items:center; gap:2px; padding:7px 6px 0 8px}
+.sheet .sh-h{display:flex; align-items:center; gap:2px; padding:7px 6px 0 14px}   /* chừa chỗ cho dấu + chèn cột trên đường kẻ */
 .sheet .sh-h input,.sheet .sh-h span{
   flex:1; min-width:0; border:none; background:none; padding:3px 2px; border-radius:4px;
   font-family:var(--mono); font-size:10.5px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-2);
 }
 .sheet .sh-h input:focus{outline:none; background:var(--surface); box-shadow:0 0 0 2px var(--accent)}
-.sheet .sh-sub{padding:0 10px 7px; font-family:var(--sans); font-size:11px; font-weight:400; letter-spacing:0; text-transform:none; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.sheet .sh-sub{padding:0 10px 7px 16px; font-family:var(--sans); font-size:11px; font-weight:400; letter-spacing:0; text-transform:none; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
 .sheet th.person .sh-sub{color:var(--accent-ink)}
 .sheet .sh-menu{flex:0 0 22px; width:22px; height:22px; border-radius:6px; color:var(--muted); font-size:14px; line-height:1}
 .sheet .sh-menu:hover{background:var(--surface-3); color:var(--ink)}
@@ -471,7 +481,8 @@ select option,select optgroup{background-color:var(--surface); color:var(--ink);
 /* Cú pháp trong Rules nằm sau dấu ? cho đỡ rối (brief trang 25). */
 .q-mark{display:inline-grid; place-items:center; width:20px; height:20px; border-radius:50%;
   border:1.5px solid var(--line-2); font-size:12px; font-weight:700; color:var(--ink-2)}
-.syntax-help[open] .q-mark{background:var(--accent); border-color:var(--accent); color:#fff}
+.q-btn{cursor:pointer; background:var(--surface)}
+.q-btn:hover,.q-btn[aria-expanded="true"]{background:var(--accent); border-color:var(--accent); color:#fff}
 .slot-who{display:flex; flex-direction:column; gap:6px}
 .slot-who > span{font-size:12px; color:var(--muted)}
 .cm-chip{flex:1; min-width:0; padding:3px 8px; border-radius:6px; font-size:12.5px; font-weight:600; background:var(--cbg, transparent); color:var(--cfg, var(--ink)); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
@@ -527,8 +538,7 @@ select option,select optgroup{background-color:var(--surface); color:var(--ink);
 /* Cột số dòng ghim bên trái, cột + ghim bên phải: bảng nhiều cột cuộn ngang vẫn luôn thấy. */
 .sheet .sh-idx{position:sticky; left:0; z-index:3; box-shadow:1px 0 0 var(--grid); text-align:center; background:var(--surface-2); color:var(--muted); font-family:var(--mono); font-size:11px}
 .sheet th.sh-add,.sheet td.sh-end{position:sticky; right:0; z-index:3; box-shadow:-1px 0 0 var(--grid), -8px 0 12px -10px rgba(0,0,0,.35)}
-.sheet td.sh-idx button{position:absolute; inset:0; display:none; width:100%; color:var(--ot); background:var(--ot-soft); font-size:16px}
-.sheet tr:hover td.sh-idx button,.sheet td.sh-idx button:focus{display:block}
+.sheet tr:hover td.sh-idx > span{visibility:hidden}
 .sheet tr.sh-new td{background:var(--surface-2)}
 .sheet tr.sh-new td.sh-doc input::placeholder{font-style:italic; color:var(--accent-ink)}
 .sheet th.sh-add{text-align:center}
@@ -1043,10 +1053,30 @@ tfoot td{background:var(--surface-2); font-weight:600; border-bottom:none}
 .gloss{padding:12px 0; border-bottom:1px solid var(--line)}
 .gloss:last-child{border-bottom:none}
 .gloss-h{display:flex; align-items:center; gap:10px}
-.gloss-h b{font-size:15px; font-weight:600; text-decoration:underline; text-underline-offset:3px}
+.gloss-h b{font-size:15px; font-weight:600}
+details.gloss > summary{list-style:none; cursor:pointer; border-radius:var(--r-sm)}
+details.gloss > summary::-webkit-details-marker{display:none}
+details.gloss > summary:hover b{text-decoration:underline; text-underline-offset:3px; text-decoration-thickness:1px}   /* như Master Data: chỉ gạch chân khi rê chuột */
+details.gloss[open] > summary .stage-chev{transform:rotate(90deg)}
+details.gloss .gloss-body{padding:6px 0 2px 28px}
 .gloss-h .btn{padding:2px 10px; font-size:12px}
 .gloss-body{font-family:"Roboto", var(--sans); font-size:13.5px; line-height:1.6; color:var(--ink-2); margin-top:4px}
 .tk-shift{border:1px solid var(--line); border-radius:var(--r); padding:10px 12px; margin-bottom:8px}
+/* ô chọn có ô tìm (brief trang 30) */
+.picker{position:fixed; z-index:95; display:flex; flex-direction:column; gap:4px; padding:6px; max-height:320px;
+  background:var(--surface); border:1px solid var(--line-2); border-radius:var(--r-sm); box-shadow:var(--shadow-3)}
+.picker-q{flex:none; height:34px; padding:0 11px; border-radius:var(--r-xs); border:1px solid var(--line-2); background:var(--surface-2); color:var(--ink); font-size:13.5px}
+.picker-q:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft)}
+.picker-list{overflow-y:auto; display:flex; flex-direction:column; min-height:0}
+.picker-opt{flex:none; text-align:left; padding:7px 10px; border-radius:var(--r-xs); font-size:13.5px; color:var(--ink)}
+.picker-opt.hi{background:var(--surface-2)}
+.picker-opt.sel{color:var(--accent-ink); font-weight:600}
+.picker-empty{padding:8px 10px; color:var(--muted); font-size:13px}
+.tk-table td{vertical-align:middle; padding:9px 12px}
+.tk-table .it-t.got{color:var(--muted); text-decoration:line-through; text-decoration-thickness:1px}
+.tk-table .it-cl{padding:1px 9px; border-radius:999px; border:1px solid var(--accent-line); background:var(--accent-soft); color:var(--accent-ink); font-size:12px; white-space:nowrap}
+.tk-table .it-cl:hover{background:var(--accent); color:#fff; border-color:var(--accent)}
+.tk-co{display:inline-flex; align-items:center; gap:7px; font-size:13px; color:var(--ink-2)}
 .tk-shift:last-child{margin-bottom:0}
 .tk-h{display:flex; align-items:center; gap:8px; flex-wrap:wrap}
 .tk-h b{font-size:14px}
@@ -1298,7 +1328,8 @@ const toMin = t => { const [h, m] = String(t || "0:0").split(":").map(Number); r
 const fromMin = m => `${pad(Math.floor(m / 60) % 24)}:${pad(m % 60)}`;
 const dur = t => { let a = toMin(t.start), b = toMin(t.end); if (b <= a) b += 1440; return (b - a) / 60; };
 const fmtH = h => (Math.round(h * 100) / 100).toString().replace(/\.0+$/, "") + "h";
-const vnd = n => new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 0 }).format(Math.round(n || 0)) + " ₫";
+// Tiền: ký hiệu $ đứng đầu, phẩy ngăn nghìn, chấm thập phân (brief trang 34). Chỉ đổi cách hiện, không quy đổi.
+const vnd = n => "$" + new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Math.round((n || 0) * 100) / 100);
 const dateVN = d => `${DOW_LONG[d.getDay()]}, ${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
 const shortVN = d => `${d.getDate()}/${d.getMonth() + 1}`;
 
@@ -2020,7 +2051,7 @@ function repaintPending() {
   paintGhost(col, pending.s, pending.e, false, "(Chưa đặt tên)", true);
 }
 function quickOutside(e) {
-  if (quickEl && !e.target.closest(".quick") && !e.target.closest(".scrim")) closeQuick();
+  if (quickEl && !e.target.closest(".quick") && !e.target.closest(".scrim") && !e.target.closest(".picker")) closeQuick();
 }
 function closeQuick(keepGhost) {
   if (quickEl) { quickEl.remove(); quickEl = null; }
@@ -2066,7 +2097,7 @@ function openQuick(seed, rect) {
       <input class="nm" placeholder="Tên công ty">
       <div class="q-new-r">
         <select class="md"><option value="hour">Theo giờ</option><option value="day">Theo ngày</option><option value="fixed">Cố định tháng</option></select>
-        <input class="rt" type="number" min="0" step="1000" placeholder="Đơn giá ₫">
+        <input class="rt" type="number" min="0" step="0.01" placeholder="Đơn giá $">
         <button type="button" class="btn primary">Thêm</button>
       </div>
     </div>
@@ -2074,7 +2105,7 @@ function openQuick(seed, rect) {
     <div class="q-new hide" id="qPeNew">
       <div class="q-new-r"><input class="nm" placeholder="Tên người làm"><button type="button" class="btn primary">Thêm</button></div>
     </div>
-    <div class="q-row">${ICON.cl}<select id="qCl">${clientOptsHTML(seed.clientId, "Thêm khách hàng mới…")}</select></div>
+    <div class="q-row">${ICON.cl}<select id="qCl" data-search>${clientOptsHTML(seed.clientId, "Thêm khách hàng mới…")}</select></div>
     <div class="q-new hide" id="qClNew">
       <div class="q-new-r"><input class="nm" placeholder="Tên khách hàng"><button type="button" class="btn primary">Thêm</button></div>
     </div>
@@ -2335,12 +2366,12 @@ function renderGlossary() {
       <button class="btn save-btn" id="glossNew">Tạo mới</button>
     </div>
     <div class="gloss-list">
-      ${list.length ? list.map(g => `<div class="gloss">
-        <div class="gloss-h">${(g.term || "").trim() ? `<b translate="no">${esc(g.term)}</b>` : `<b>(chưa đặt tên)</b>`}
+      ${list.length ? list.map(g => `<details class="gloss" data-gid="${g.id}" ${(state.glossOpen || {})[g.id] ? "open" : ""}>
+        <summary class="gloss-h"><span class="stage-chev" aria-hidden="true"></span>${(g.term || "").trim() ? `<b translate="no">${esc(g.term)}</b>` : `<b>(chưa đặt tên)</b>`}
           <div class="spacer" style="flex:1"></div>
-          <button class="btn" data-gedit="${g.id}" title="Sửa nội dung">✎ Sửa</button></div>
+          <button class="btn" data-gedit="${g.id}" title="Sửa nội dung">✎ Sửa</button></summary>
         <div class="gloss-body">${(g.body || "").trim() ? `<span translate="no">${esc(g.body).replace(/\n/g, "<br>")}</span>` : muted("Chưa có định nghĩa.")}</div>
-      </div>`).join("")
+      </details>`).join("")
       : `<div class="empty"><b>${all.length ? "Không tìm thấy mục nào." : "Thuật ngữ đang trống."}</b>
         ${all.length ? "Thử từ khoá khác." : 'Bấm Create để thêm mục đầu tiên, ví dụ "Refinance".'}</div>`}
     </div>
@@ -2350,36 +2381,21 @@ function renderGlossary() {
 /* ============================== công việc gom theo công ty ==============================
    Mọi việc của mọi ngày nằm chung một chỗ, chia tab theo công ty, lọc theo xong hay chưa. */
 function renderTasks() {
-  const tab = state.taskTab || "all", q = (state.taskQ || "").trim().toLowerCase(), sc = loanSchema();
-  const ampm = t => { const [h, m] = t.split(":").map(Number); return `${h % 12 || 12}${m ? ":" + pad(m) : ""}${h < 12 ? "A.M" : "P.M"}`; };
-  // Mỗi ca là một thẻ: công ty, khung giờ, tổng giờ, tiền, rồi tới từng việc của ca.
-  const shifts = state.tasks.filter(visible).filter(t => tab === "all" || (t.companyId || "") === tab)
-    .map(t => ({ t, items: taskItems(t), pay: payOf(t) }))
-    .filter(x => {
-      if (state.taskOnly === "done" && !x.items.every(i => i.done)) return false;
-      if (state.taskOnly === "pending" && x.items.length && x.items.every(i => i.done)) return false;
-      if (!q) return true;
-      const names = x.items.map(i => (cl(i.clientId) || {}).name || "").join(" ");
-      return [x.items.map(i => i.text).join(" "), coName(x.t.companyId), names, crewPeople(x.t).map(peName).join(" ")].join(" ").toLowerCase().includes(q);
-    })
-    .sort((a2, b2) => b2.t.date.localeCompare(a2.t.date) || toMin(a2.t.start) - toMin(b2.t.start));
+  const tab = state.taskTab || "all", q = (state.taskQ || "").trim().toLowerCase();
   const all = state.tasks.filter(visible);
-  const count = id => all.filter(t => id === "all" || (t.companyId || "") === id).reduce((n, t) => n + Math.max(1, taskItems(t).length), 0);
+  // Mỗi việc một dòng như brief trang 9 và 11: ngày, việc, khách, trạng thái. Công ty đã lọc bằng tab ở trên.
+  const rows = all.filter(t => tab === "all" || (t.companyId || "") === tab)
+    .flatMap(t => taskCrew(t).flatMap(w => w.items.map(it => ({ t, it, w }))))
+    .filter(r => {
+      if (state.taskOnly === "done" && !r.it.done) return false;
+      if (state.taskOnly === "pending" && r.it.done) return false;
+      if (!q) return true;
+      return [r.it.text, (cl(r.it.clientId) || {}).name || "", coName(r.t.companyId), peName(r.w.personId)].join(" ").toLowerCase().includes(q);
+    })
+    .sort((x, y) => y.t.date.localeCompare(x.t.date) || toMin(x.t.start) - toMin(y.t.start));
+  const count = id => all.filter(t => id === "all" || (t.companyId || "") === id).reduce((n, t) => n + taskItems(t).length, 0);
   const tabs = [["all", "Tất cả"], ...state.companies.map(c => [c.id, c.name]), ...(all.some(t => !t.companyId) ? [["", "Chưa gán công ty"]] : [])];
-  const jobs = shifts.flatMap(x => x.items);
-  const totH = shifts.reduce((n, x) => n + x.pay.h, 0), totM = shifts.reduce((n, x) => n + x.pay.amount, 0);
-  const byDate = new Map();
-  shifts.forEach(x => { if (!byDate.has(x.t.date)) byDate.set(x.t.date, []); byDate.get(x.t.date).push(x); });
-  // Tên khách và mục đích vay lấy từ hồ sơ vay, như ghi chú "lấy từ master data".
-  const clientLine = x => {
-    const ids = [...new Set(x.items.map(i => i.clientId).filter(Boolean))];
-    if (!ids.length) return "";
-    return `<div class="tk-cl">${ids.map(id => {
-      const kase = state.loanCases.find(k => caseClientId(k) === id), info = kase ? caseSummary(kase, sc.fields) : "";
-      return `<span><button type="button" class="it-cl" data-peek="client:${id}">${esc((cl(id) || {}).name || "Khách")}</button>
-        ${info ? `<i>${esc(info)}</i>` : `<i class="none">chưa có hồ sơ vay</i>`}</span>`;
-    }).join("")}</div>`;
-  };
+  const showCo = tab === "all";
 
   $("#tasksBody").innerHTML = `
     <div class="card"><div class="card-b" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
@@ -2391,30 +2407,18 @@ function renderTasks() {
     </div></div>
     <div class="card">
       <div class="card-h"><h2>${esc((tabs.find(x => x[0] === tab) || ["", "Tất cả"])[1])}</h2>
-        <span class="lbl">${jobs.filter(i => i.done).length}/${jobs.length} việc xong · ${fmtH(totH)} · ${vnd(totM)}</span></div>
+        <span class="lbl">${rows.filter(r => r.it.done).length}/${rows.length} việc xong</span></div>
       <div class="card-b">
-        ${shifts.length ? [...byDate.entries()].map(([date, xs]) => `<div class="tk-day">
-          <div class="tk-date">${dmy(date)} · ${DOW_LONG[parseISO(date).getDay()]}</div>
-          ${xs.map(x => `<div class="tk-shift">
-            <div class="tk-h">
-              <i class="swatch" style="background:${coColor(x.t.companyId)}"></i>
-              <b>${esc(coName(x.t.companyId))}</b>
-              <span class="num">${ampm(x.t.start)} - ${ampm(x.t.end)}</span>
-              ${x.t.overtime ? `<span class="pill ot"><i class="dot"></i>Tăng ca</span>` : ""}
-              <div class="spacer" style="flex:1"></div>
-              <span class="tk-m"><i>Tổng giờ</i><b class="num">${fmtH(x.pay.h)}</b></span>
-              <span class="tk-m"><i>Tiền công</i><b class="money">${x.pay.noCo ? "—" : vnd(x.pay.amount)}</b></span>
-              <button type="button" class="btn" data-task="${x.t.id}">Chi tiết ca</button>
-            </div>
-            ${clientLine(x)}
-            ${taskCrew(x.t).filter(w => w.items.length).map(w => `${taskCrew(x.t).length > 1 ? `<div class="tk-who">${esc(peName(w.personId))}</div>` : ""}
-            <ul class="d-items" style="padding-left:0">${w.items.map(it => `<li>
-              <span translate="no" class="it-t ${it.done ? "got" : ""}" style="flex:1">${esc(it.text || "Việc")}</span>
-              ${it.clientId ? `<button type="button" class="it-cl" data-peek="client:${it.clientId}">${esc((cl(it.clientId) || {}).name || "Khách")}</button>` : ""}
-              ${statusSel(x.t.id, it.id, it.done)}
-            </li>`).join("")}</ul>`).join("") || `<div style="font-size:12.5px;color:var(--muted);padding:2px 0 4px">Ca này chưa ghi việc nào. Bấm Task detail để thêm.</div>`}
-          </div>`).join("")}
-        </div>`).join("")
+        ${rows.length ? `<div class="tbl-wrap"><table class="tk-table">
+          <thead><tr><th style="width:120px">Ngày tháng</th><th>Việc cần làm</th><th>Khách hàng</th>${showCo ? "<th>Công ty</th>" : ""}<th style="width:150px">Trạng thái</th><th style="width:44px"></th></tr></thead>
+          <tbody>${rows.map(r => `<tr class="${r.it.done ? "is-done" : ""}">
+            <td class="num">${dmy(r.t.date)}</td>
+            <td><span translate="no" class="it-t ${r.it.done ? "got" : ""}">${esc(r.it.text || "Việc")}</span></td>
+            <td>${r.it.clientId ? `<button type="button" class="it-cl" data-peek="client:${r.it.clientId}">${esc((cl(r.it.clientId) || {}).name || "Khách")}</button>` : muted("—")}</td>
+            ${showCo ? `<td><span class="tk-co"><i class="swatch" style="background:${coColor(r.t.companyId)}"></i>${esc(coName(r.t.companyId))}</span></td>` : ""}
+            <td>${statusSel(r.t.id, r.it.id, r.it.done)}</td>
+            <td><button type="button" class="btn icon ghost" data-task="${r.t.id}" title="Chi tiết ca" aria-label="Chi tiết ca">↗</button></td>
+          </tr>`).join("")}</tbody></table></div>`
         : `<div class="empty"><b>Chưa có việc nào ở đây.</b>Thêm ca làm ở tab Lịch, mục Lịch làm việc.</div>`}
       </div>
     </div>`;
@@ -2933,7 +2937,10 @@ const noValueOp = op => ["filled", "empty", "true", "false"].includes(op);
 const asOne = v => (Array.isArray(v) ? v[0] || "" : v == null ? "" : String(v));
 const asMany = v => (Array.isArray(v) ? v : v == null || v === "" ? [] : [String(v)]);
 const blank = v => v === "" || v == null || (typeof v === "number" && isNaN(v));
-const fmtNum = (f, n) => new Intl.NumberFormat("vi-VN").format(Number(n)) + (f && f.unit ? " " + f.unit : "");
+const isMoneyUnit = u => u === "₫" || u === "$";
+const fmtNum = (f, n) => f && isMoneyUnit(f.unit)
+  ? "$" + new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(Number(n))
+  : new Intl.NumberFormat("vi-VN").format(Number(n)) + (f && f.unit ? " " + f.unit : "");
 const muted = t => `<span style="font-size:12.5px;color:var(--muted)">${t}</span>`;
 const cloneCase = c => JSON.parse(JSON.stringify(c));
 const maxOrder = () => state.loanRules.reduce((m, r) => Math.max(m, r.order || 0), 0);
@@ -3002,7 +3009,7 @@ const LOAN_TEMPLATE = {
   fields: [
     { id: "bank", label: "Ngân hàng", type: "one", scope: "case", options: ["Vietcombank", "BIDV", "Techcombank"] },
     { id: "purpose", label: "Mục đích vay", type: "many", scope: "case", options: ["Mua nhà", "Mua xe", "Kinh doanh"] },
-    { id: "amount", label: "Số tiền vay", type: "number", scope: "case", unit: "₫", options: [] },
+    { id: "amount", label: "Số tiền vay", type: "number", scope: "case", unit: "$", options: [] },
     { id: "dep", label: "Có người phụ thuộc", type: "bool", scope: "case", options: [] },
     {
       id: "income", label: "Loại thu nhập", type: "many", scope: "person",
@@ -3313,7 +3320,7 @@ function renderLoan() {
       ${c ? `<button class="btn" data-lt="fields">Sửa form nhập liệu</button>
         <button class="btn" id="loanCopy">Sao chép danh sách chứng từ</button>
         <button class="btn danger" data-loan-del="${c.id}">Xoá hồ sơ</button>` : ""}
-    </div>` + (c ? `${caseFormHTML(c)}${caseTasksHTML(c)}<div id="loanOut" class="loan-out">${loanOutHTML(c)}</div>`
+    </div>` + (c ? `${caseFormHTML(c)}<div id="loanOut" class="loan-out">${loanOutHTML(c)}</div>${caseTasksHTML(c)}`
       : `<div class="card"><div class="empty"><b>Chưa chọn khách hàng nào.</b>${state.loanCases.length
         ? `Chọn khách ở ô trên, hoặc mở Dữ liệu tổng để xem cả danh sách.<div style="margin-top:12px"><button class="btn" data-tab-go="master">Mở Dữ liệu tổng</button></div>`
         : `Bấm "+ Hồ sơ mới" để tạo hồ sơ khách đầu tiên.`}</div></div>`);
@@ -3325,7 +3332,7 @@ const caseName = k => { const p = loanPeople(k); return p.length ? p.map(x => x.
 function casePickHTML(c) {
   const rows = state.loanCases.slice().sort((x, y) => (y.createdAt || "").localeCompare(x.createdAt || ""));
   if (!rows.length) return "";
-  return `<select id="casePick" class="mini" style="width:auto;min-width:240px;max-width:100%" aria-label="Chọn khách hàng">
+  return `<select id="casePick" data-search class="mini" style="width:auto;min-width:240px;max-width:100%" aria-label="Chọn khách hàng">
     ${c ? "" : `<option value="" selected>— chọn khách hàng —</option>`}
     ${rows.map(k => `<option value="${k.id}" ${c && k.id === c.id ? "selected" : ""}>${esc(caseName(k))}</option>`).join("")}
   </select>`;
@@ -3353,7 +3360,7 @@ function casesHTML() {
         <td class="num">${i + 1}</td>
         <td><b class="md-link">${esc(people.length ? people[0].name : "(chưa nhập tên)")}</b>
           ${people.length > 1 ? `<div style="font-size:12px;color:var(--muted)">${people.slice(1).map(x => `${esc(x.label)}: ${esc(x.name)}`).join(" · ")}</div>` : ""}
-          ${cid ? `<div style="font-size:11.5px;color:var(--accent-ink)">Khách trên lịch: ${esc((cl(cid) || {}).name || "")}</div>` : ""}</td>
+</td>
         ${cols.map(f => `<td>${esc(valueText(f, (c.values || {})[f.id]) || "—")}</td>`).join("")}
         <td class="r num">${docs.length ? `${got}/${docs.length}` : "—"}</td>
         <td class="r num">${jobs.length ? `${jobs.filter(j => j.x.done).length}/${jobs.length}` : "—"}</td>
@@ -3445,7 +3452,7 @@ function caseTasksHTML(c) {
     <div class="card-h"><h2>Công việc từ lịch</h2>
       ${jobs.length ? `<span class="lbl">${done}/${jobs.length} xong · ${fmtH(hours)}</span>` : ""}
       <div class="spacer"></div>
-      <select id="caseClient" class="mini" style="width:auto;min-width:200px" aria-label="Khách hàng trên lịch">
+      <select id="caseClient" data-search class="mini" style="width:auto;min-width:200px" aria-label="Khách hàng trên lịch">
         <option value="">— chưa gắn khách trên lịch —</option>
         ${state.clients.map(x => `<option value="${x.id}" ${x.id === cid ? "selected" : ""}>${esc(x.name)}</option>`).join("")}
         <option value="__new">+ Tạo khách hàng theo tên người vay</option>
@@ -4084,29 +4091,20 @@ function sheetRules() {
 }
 function rulesHTML() {
   const cols = sheetCols(), W = { doc: null, stage: 112, who: 178 };
-  const fixedW = 40 + 44 + cols.reduce((m, c) => m + (c.f ? 138 : W[c.key] || 0), 0) + 250;
+  const fixedW = 56 + 44 + cols.reduce((m, c) => m + (c.f ? 138 : W[c.key] || 0), 0) + 250;
   const lists = loanSchema().fields.map(f => {
     const opts = f.type === "bool" ? (state.lang === "en" ? ["yes", "no"] : ["có", "không"]) : f.type === "one" || f.type === "many" ? fieldOpts(f) : [];
     return opts.length ? `<datalist id="dl-${f.id}">${opts.map(o => `<option value="${esc(o)}"></option>`).join("")}</datalist>` : "";
   }).join("") + `<datalist id="dl-who">${whoValues().map(o => `<option value="${esc(o)}"></option>`).join("")}</datalist>`;
   return `<div class="card">
-    <div class="card-h"><h2>Quy tắc chứng từ</h2><span class="lbl">${state.loanRules.length} dòng</span><div class="spacer"></div>
+    <div class="card-h"><h2>Quy tắc chứng từ</h2>
+      <button type="button" class="q-mark q-btn" id="syntaxBtn" aria-expanded="${!!state.syntaxOpen}" title="Cách gõ trong ô · cú pháp điều kiện" aria-label="Cách gõ trong ô · cú pháp điều kiện">?</button>
+      <span class="lbl">${state.loanRules.length} dòng</span><div class="spacer"></div>
       <button type="button" class="btn" id="sheetImport">Nhập từ Google Sheet</button>
       <button type="button" class="btn danger" id="sheetClear">Xoá toàn bộ…</button>
       <input id="ruleQ" class="mini" style="width:min(260px,100%)" placeholder="Lọc theo nội dung ô" value="${esc(state.ruleQ || "")}"></div>
     <div class="card-b" style="display:flex;flex-direction:column;gap:14px">
-      ${cols.length ? "" : `<div class="note-box" style="display:flex;flex-direction:column;gap:10px;align-items:flex-start">
-        <span>Bảng đang trống, chưa có cột nào. Bấm <b>+ Thêm cột</b> để tự tạo cột, rồi bấm <b>⋯</b> trên cột để chọn vai trò: điều kiện, tên chứng từ, giai đoạn hay áp dụng cho. Hoặc nhập nguyên bảng từ Google Sheet.</span>
-        <div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn primary" data-sheetimport>Nhập từ Google Sheet</button><button type="button" class="btn" id="loanImport">Nạp mẫu từ bảng tính</button></div></div>`}
-      ${cols.length && !state.loanRules.length ? `<div class="note-box">Chưa có dòng nào. Gõ thẳng vào dòng trống cuối bảng, hoặc dán các dòng copy từ Google Sheet.</div>` : ""}
-      <div class="sheet-wrap"><table class="sheet" style="min-width:${fixedW}px">
-        <colgroup><col style="width:40px">${cols.map(c => `<col style="width:${c.f ? "138px" : W[c.key] ? W[c.key] + "px" : "auto"}">`).join("")}<col style="width:44px"></colgroup>
-        <thead id="sheetHead">${sheetHeadHTML(cols)}</thead>
-        <tbody id="sheetBody">${sheetRowsHTML()}</tbody>
-      </table></div>${lists}
-      <details class="note-box syntax-help" ${state.syntaxOpen ? "open" : ""}>
-        <summary><span class="q-mark" aria-hidden="true">?</span>Cách gõ trong ô · cú pháp điều kiện</summary>
-        <table class="syntax"><tbody>
+      <div class="note-box syntax-help ${state.syntaxOpen ? "" : "hide"}" id="syntaxPanel"><table class="syntax"><tbody>
           <tr><td style="width:170px"><b>Mọi cột điều kiện</b></td><td>Để trống hoặc <code>*</code> là áp dụng cho mọi giá trị. Một dòng áp dụng khi <b>mọi</b> ô điều kiện của nó đều khớp.</td></tr>
           <tr><td>Chọn một, chọn nhiều</td><td><code>Mua nhà</code> đúng giá trị · <code>Mua nhà, Mua xe</code> là một trong · <code>!Mua nhà</code> trừ giá trị đó</td></tr>
           <tr><td>Số</td><td><code>12</code> · <code>&gt;= 500tr</code> · <code>&lt; 2 tỷ</code> · <code>6 - 24</code> trong khoảng</td></tr>
@@ -4117,16 +4115,25 @@ function rulesHTML() {
           <tr><td>Thao tác</td><td>Enter xuống dòng dưới · gõ vào dòng cuối là thêm rule · dán nhiều dòng từ Google Sheet để nhập hàng loạt · bấm vào tên cột để đổi tên, <code>+</code> để thêm cột, <code>⋯</code> để chọn vai trò, tô màu, dời, chèn hoặc xoá cột</td></tr>
         </tbody></table>
         <div style="margin-top:8px">Giá trị gõ trong các cột chọn một và chọn nhiều tự thành lựa chọn trong form hồ sơ. Ô tô đỏ là ô không hiểu được, dòng đó sẽ không áp dụng cho tới khi sửa.</div>
-      </details>
+      </div>
+      ${cols.length ? "" : `<div class="note-box" style="display:flex;flex-direction:column;gap:10px;align-items:flex-start">
+        <span>Bảng đang trống, chưa có cột nào. Bấm <b>+ Thêm cột</b> để tự tạo cột, rồi bấm <b>⋯</b> trên cột để chọn vai trò: điều kiện, tên chứng từ, giai đoạn hay áp dụng cho. Hoặc nhập nguyên bảng từ Google Sheet.</span>
+        <div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn primary" data-sheetimport>Nhập từ Google Sheet</button><button type="button" class="btn" id="loanImport">Nạp mẫu từ bảng tính</button></div></div>`}
+      ${cols.length && !state.loanRules.length ? `<div class="note-box">Chưa có dòng nào. Gõ thẳng vào dòng trống cuối bảng, hoặc dán các dòng copy từ Google Sheet.</div>` : ""}
+      <div class="sheet-wrap"><table class="sheet" style="min-width:${fixedW}px">
+        <colgroup><col style="width:56px">${cols.map(c => `<col style="width:${c.f ? "138px" : W[c.key] ? W[c.key] + "px" : "auto"}">`).join("")}<col style="width:44px"></colgroup>
+        <thead id="sheetHead">${sheetHeadHTML(cols)}</thead>
+        <tbody id="sheetBody">${sheetRowsHTML()}</tbody>
+      </table></div>${lists}
+
     </div>
   </div>`;
 }
 function sheetHeadHTML(cols) {
   const hint = { doc: "**đậm** · | link", stage: "số thứ tự", who: "trống = Hồ sơ chung" };
   // Kéo tiêu đề cột sang trái phải để xếp lại, và dấu + ngay trên đường kẻ để chèn cột.
-  return `<tr><th class="sh-idx"></th>${cols.map((c, i) => `<th class="sh-${c.f ? "f" : c.key}" draggable="true" data-colkey="${c.key}" data-colpos="${i}">
-      <button type="button" class="col-ins" data-colins="${i}" title="Chèn cột vào đây" aria-label="Chèn cột trước ${esc(colLabel(c))}">+</button>
-      ${i === cols.length - 1 ? `<button type="button" class="col-ins right" data-colins="${i + 1}" title="Chèn cột vào đây" aria-label="Chèn cột sau ${esc(colLabel(c))}">+</button>` : ""}
+  return `<tr><th class="sh-idx">${cols.length ? `<button type="button" class="col-ins" data-colins="0" title="Chèn cột vào đây" aria-label="Chèn cột trước ${esc(colLabel(cols[0]))}">+</button>` : ""}</th>${cols.map((c, i) => `<th class="sh-${c.f ? "f" : c.key}" draggable="true" data-colkey="${c.key}" data-colpos="${i}">
+      ${i ? `<button type="button" class="col-ins" data-colins="${i}" title="Chèn cột vào đây" aria-label="Chèn cột trước ${esc(colLabel(c))}">+</button>` : ""}
       <div class="sh-h"><input data-colname="${c.key}" draggable="false" value="${esc(colLabel(c))}" aria-label="Tên cột">
         <button type="button" class="sh-menu" data-colmenu="${c.key}" aria-label="Tuỳ chọn cột ${esc(colLabel(c))}">⋯</button></div>
       <div class="sh-sub">${c.f ? "" : hint[c.key]}</div></th>`).join("")}
@@ -4435,6 +4442,12 @@ function loanClick(e) {
   if ((b = q("[data-pal]"))) {
     const pal = b.closest("#palette");
     setValueColor(pal.dataset.col, pal.dataset.vv, pal.dataset.kind, b.dataset.pal || ""); closePalette();
+    return true;
+  }
+  if ((b = q("#syntaxBtn"))) {
+    state.syntaxOpen = !state.syntaxOpen;
+    b.setAttribute("aria-expanded", String(state.syntaxOpen));
+    const pnl = $("#syntaxPanel"); if (pnl) pnl.classList.toggle("hide", !state.syntaxOpen);
     return true;
   }
   if ((b = q("#sheetClear"))) { openClearMenu(b); return true; }
@@ -4874,6 +4887,7 @@ document.addEventListener("input", e => {
 document.addEventListener("toggle", e => {
   const d = e.target;
   if (d.classList && d.classList.contains("syntax-help")) state.syntaxOpen = d.open;
+  if (d.dataset && d.dataset.gid) state.glossOpen = Object.assign({}, state.glossOpen, { [d.dataset.gid]: d.open });
   if (d.dataset && d.dataset.fold && d.open) state.payFold = d.dataset.fold;
   if (!d.dataset || !d.dataset.stagecard) return;
   state.stageOpen = Object.assign({}, state.stageOpen, { [d.dataset.stagecard]: d.open });
@@ -5110,7 +5124,7 @@ function openTask(t) {
             <div class="inline-add hide" id="coNew">
               <input class="nm" placeholder="Tên công ty">
               <select><option value="hour">Theo giờ</option><option value="day">Theo ngày</option><option value="fixed">Cố định tháng</option></select>
-              <input class="rate" type="number" min="0" step="1000" placeholder="Đơn giá ₫">
+              <input class="rate" type="number" min="0" step="0.01" placeholder="Đơn giá $">
               <button type="button" class="btn primary">Thêm</button>
             </div>
           </div>
@@ -5195,7 +5209,7 @@ function openTask(t) {
         <div class="items">${w.items.length ? w.items.map((it, i) => `<div class="item-row" data-i="${i}">
           <button type="button" class="it-done ${it.done ? "on" : ""}" data-idone aria-pressed="${it.done}" title="${it.done ? "Đã xong" : "Chưa xong"}">${it.done ? "✓" : ""}</button>
           <input data-itext value="${esc(it.text)}" placeholder="Việc cần làm, ví dụ: Do SOCA">
-          <select data-icl aria-label="Khách hàng của việc">${clientOpts(it.clientId)}</select>
+          <select data-icl data-search aria-label="Khách hàng của việc">${clientOpts(it.clientId)}</select>
           ${it.clientId ? `<button type="button" class="btn icon ghost" data-iprofile="${it.clientId}" title="Mở hồ sơ khách" aria-label="Mở hồ sơ khách">↗</button>` : ""}
           <button type="button" class="btn icon ghost" data-idel title="Xoá việc" aria-label="Xoá việc">×</button>
         </div>`).join("") : `<div style="font-size:12.5px;color:var(--muted)">Chưa có việc nào. Bấm + để thêm.</div>`}</div>
@@ -5483,7 +5497,7 @@ function openCompany(c) {
           <option value="day" ${c.mode === "day" ? "selected" : ""}>Theo ngày công</option>
           <option value="fixed" ${c.mode === "fixed" ? "selected" : ""}>Cố định hằng tháng</option>
         </select></div>
-        <div class="f"><label>Đơn giá (₫)</label><input type="number" id="cRate" min="0" step="1000" value="${c.rate || 0}"></div>
+        <div class="f"><label>Đơn giá ($)</label><input type="number" id="cRate" min="0" step="0.01" value="${c.rate || 0}"></div>
       </div>
       <div class="row">
         <div class="f"><label>Hệ số tăng ca</label><input type="number" id="cOt" min="1" step="0.1" value="${c.ot || 1.5}"></div>
@@ -5651,6 +5665,67 @@ function openPeek(kind, id) {
   $("#mCancel").onclick = close; $("#mClose2").onclick = close;
   $("#scrim").onclick = e => { if (e.target.id === "scrim") close(); };
 }
+
+/* ---- ô chọn có ô tìm: bấm vào ô chọn khách thì hiện danh sách kèm ô Search, gõ tới đâu lọc tới đó ----
+   Ô chọn gốc vẫn giữ giá trị và phát sự kiện change như cũ, nên mọi chỗ đang nghe nó không phải đổi. */
+let pickerEl = null;
+function closePicker() { if (pickerEl) { pickerEl.remove(); pickerEl = null; } }
+function openPicker(sel) {
+  closePicker();
+  const opts = [...sel.options].map(o => ({ v: o.value, t: o.textContent.trim() }));
+  const m = document.createElement("div");
+  m.className = "picker"; pickerEl = m;
+  m.innerHTML = `<input class="picker-q" placeholder="Tìm khách hàng…" aria-label="Tìm khách hàng"><div class="picker-list" role="listbox"></div>`;
+  document.body.appendChild(m);
+  const inp = m.querySelector(".picker-q"), list = m.querySelector(".picker-list");
+  let hi = 0, shown = [];
+  const draw = () => {
+    const k = inp.value.trim().toLowerCase();
+    // lựa chọn "+ Thêm … mới" luôn giữ lại ở cuối
+    shown = opts.filter(o => !k || o.v.startsWith("__") || o.t.toLowerCase().includes(k));
+    hi = Math.max(0, Math.min(hi, shown.length - 1));
+    list.innerHTML = shown.map((o, i) => `<button type="button" class="picker-opt ${o.v === sel.value ? "sel" : ""} ${i === hi ? "hi" : ""}" data-pick="${esc(o.v)}" role="option">${esc(o.t)}</button>`).join("")
+      || `<div class="picker-empty">Không tìm thấy</div>`;
+    const cur = list.querySelector(".hi"); if (cur) cur.scrollIntoView({ block: "nearest" });
+  };
+  const choose = v => {
+    closePicker();
+    if (v === undefined) return;
+    sel.value = v;
+    sel.dispatchEvent(new Event("change", { bubbles: true }));
+  };
+  hi = Math.max(0, opts.findIndex(o => o.v === sel.value));
+  draw();
+  // đặt ngay dưới ô chọn; không đủ chỗ thì lật lên trên
+  const r = sel.getBoundingClientRect(), w = Math.max(r.width, 240);
+  m.style.width = w + "px";
+  m.style.left = Math.max(12, Math.min(innerWidth - w - 12, r.left)) + "px";
+  const below = innerHeight - r.bottom - 12;
+  if (below >= Math.min(m.offsetHeight, 220)) m.style.top = (r.bottom + 4) + "px";
+  else m.style.top = Math.max(12, r.top - m.offsetHeight - 4) + "px";
+  inp.addEventListener("input", () => { hi = 0; draw(); });
+  inp.addEventListener("keydown", e => {
+    if (e.key === "ArrowDown") { e.preventDefault(); hi = Math.min(hi + 1, shown.length - 1); draw(); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); hi = Math.max(hi - 1, 0); draw(); }
+    else if (e.key === "Enter") { e.preventDefault(); if (shown[hi]) choose(shown[hi].v); }
+    else if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); closePicker(); sel.focus(); }
+  });
+  list.addEventListener("mousedown", e => e.preventDefault());   // giữ con trỏ trong ô tìm
+  list.addEventListener("click", e => { const b = e.target.closest("[data-pick]"); if (b) choose(b.dataset.pick); });
+  setTimeout(() => inp.focus(), 0);
+}
+// Bấm hoặc dùng bàn phím mở ô chọn có data-search: hiện danh sách có ô tìm thay cho danh sách của trình duyệt.
+document.addEventListener("mousedown", e => {
+  const sel = e.target.closest && e.target.closest("select[data-search]");
+  if (sel) { e.preventDefault(); if (pickerEl) closePicker(); else openPicker(sel); return; }
+  if (pickerEl && !e.target.closest(".picker")) closePicker();
+}, true);
+document.addEventListener("keydown", e => {
+  const sel = e.target.matches && e.target.matches("select[data-search]") ? e.target : null;
+  if (sel && (e.key === "Enter" || e.key === " " || e.key === "ArrowDown" || e.key === "ArrowUp")) { e.preventDefault(); openPicker(sel); }
+}, true);
+addEventListener("resize", closePicker);
+document.addEventListener("scroll", e => { if (pickerEl && !pickerEl.contains(e.target)) closePicker(); }, true);
 
 /* ============================== sự kiện ============================== */
 const tabClick = e => {
@@ -6002,7 +6077,7 @@ const EN = {
   "Thêm công ty": "Add company", "Thêm người": "Add person", "Thêm khách hàng": "Add client",
   "Người làm mới": "New worker", "Khách hàng mới": "New client",
   "Theo giờ": "Per hour", "Theo ngày": "Per day", "Theo ngày công": "Per work day", "Cố định tháng": "Fixed monthly",
-  "Cố định hằng tháng": "Fixed monthly", "Đơn giá": "Rate", "Đơn giá ₫": "Rate ₫", "Đơn giá (₫)": "Rate (₫)",
+  "Cố định hằng tháng": "Fixed monthly", "Đơn giá": "Rate", "Đơn giá $": "Rate $", "Đơn giá ($)": "Rate ($)",
   "Bấm vào ca để sửa · bấm ✓ để đánh dấu việc xong": "Click a shift to edit · tick ✓ to mark a task done",
   "Tìm việc, khách, người làm": "Search tasks, clients, people", "Mở ca": "Open shift",
   "Chưa có việc nào ở đây.": "No tasks here yet.", "Thêm ca làm ở tab Lịch, mục Lịch làm việc.": "Add a shift in Calendar → Work calendar.",
@@ -6104,6 +6179,8 @@ const EN = {
   "Chưa chọn khách hàng nào.": "No client selected.",
   "Chọn khách ở ô trên, hoặc mở Master Data để xem cả danh sách.": "Pick a client above, or open Master Data to see the full list.",
   'Bấm "+ Hồ sơ mới" để tạo hồ sơ khách đầu tiên.': 'Press "+ New file" to create the first client file.',
+  "Tìm khách hàng…": "Search clients…", "Tìm khách hàng": "Search clients", "Không tìm thấy": "No match",
+  "Ngày tháng": "Date", "Trạng thái": "Status",
   "Người bảo lãnh 1": "Guarantor 1", "Người bảo lãnh 2": "Guarantor 2", "Họ tên": "Full name",
   "Cách gõ trong ô · cú pháp điều kiện": "How to type in a cell · condition syntax",
   "Người bảo lãnh (nếu có)": "Guarantor (if any)", "Người vay chính": "Main applicant",
@@ -6173,7 +6250,7 @@ const EN_RE = [
   [/^(\d+) nhiệm vụ$/, "$1 shifts"], [/^(\d+) nhiệm vụ · (.+)$/, "$1 shifts · $2"],
   [/^(\d+)\/(\d+) việc xong · (.+)$/, "$1/$2 tasks done · $3"],
   [/^(.+) · Tăng ca$/, "$1 · Overtime"], [/^(.+) · tăng ca$/, "$1 · overtime"],
-  [/^(.+) ₫\/giờ$/, "$1 ₫/hour"], [/^(.+) ₫\/ngày công$/, "$1 ₫/work day"], [/^(.+) ₫\/tháng$/, "$1 ₫/month"],
+  [/^(\$[\d.,]+)\/giờ$/, "$1/hour"], [/^(\$[\d.,]+)\/ngày công$/, "$1/work day"], [/^(\$[\d.,]+)\/tháng$/, "$1/month"],
   [/^(.+) · tăng ca ×(.+) · (.+)h\/ngày chuẩn$/, "$1 · overtime ×$2 · $3h standard day"],
   [/^Ngày thường · trả (\d+)% lương giờ$/, "Normal day · pays $1% of the hourly rate"],
   [/^(.+) · trả (\d+)% lương giờ, trong đó (.+) ban đêm được cộng thêm (\d+)%$/,
@@ -6301,7 +6378,7 @@ EN_RE.unshift(
 );
 // Khuôn chung, xét sau cùng.
 EN_RE.push(
-  [/^Màu (#[0-9A-Fa-f]{6})$/, "Colour $1"], [/^Bỏ (.+)$/, "Remove $1"], [/^(.+) ₫\/ngày$/, "$1 ₫/day"],
+  [/^Màu (#[0-9A-Fa-f]{6})$/, "Colour $1"], [/^Bỏ (.+)$/, "Remove $1"], [/^(\$[\d.,]+)\/ngày$/, "$1/day"],
   [/^Xoá công ty (.+)$/, "Delete company $1"], [/^Cột (\d+)$/, "Column $1"], [/^(.+): ([\d.,]+h)$/, "$1: $2"],
   [/^(.+) (\d+)%$/, "$1 $2%"], [/^Xoá (.+)$/, "Delete $1"],
 );
