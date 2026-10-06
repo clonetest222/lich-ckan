@@ -6846,8 +6846,14 @@ document.addEventListener("click", e => {
 document.addEventListener("change", e => {
   const si = e.target.closest("[data-statusitem]");
   if (si) {
-    const [tid, iid] = si.dataset.statusitem.split("|");
-    setItemDone(tid, iid, si.value === "1");
+    const key = si.dataset.statusitem, [tid, iid] = key.split("|"), done = si.value === "1";
+    si.classList.toggle("done", done);   // đổi màu ngay, không chờ vẽ lại
+    // Ô chọn đang được trỏ vào thì trang hồ sơ khách coi như đang gõ và không vẽ lại: trả con trỏ ra trước
+    // để số việc xong cập nhật luôn, vẽ xong thì trỏ lại đúng ô đó.
+    const had = document.activeElement === si;
+    if (had) si.blur();
+    setItemDone(tid, iid, done);
+    if (had) { const again = document.querySelector(`[data-statusitem="${key}"]`); if (again) again.focus(); }
     return;
   }
   if (loanChange(e)) return;
