@@ -1586,6 +1586,20 @@ const state = {
 let db = null, remote = false;
 
 const co = id => state.companies.find(c => c.id === id);
+// Công ty trùng tên (không phân biệt hoa thường, khoảng trắng) là một công ty khi lọc và chọn.
+const coKey = c => String((c && c.name) || "").trim().toLowerCase();
+const sameNameCo = name => state.companies.find(c => coKey(c) === String(name || "").trim().toLowerCase());
+// Mã đại diện cho cả nhóm trùng tên: công ty lập trước nhất.
+const canonCo = id => { const c = co(id); if (!c) return id || ""; const f = state.companies.find(x => coKey(x) === coKey(c)); return f ? f.id : id; };
+// Mỗi tên một công ty; keep: công ty đang chọn thì đứng đại diện cho nhóm của nó, để ô chọn vẫn đúng.
+function uniqCos(keep) {
+  const k = co(keep), seen = new Set(), out = [];
+  state.companies.forEach(c => {
+    const key = coKey(c); if (seen.has(key)) return;
+    seen.add(key); out.push(k && coKey(k) === key ? k : c);
+  });
+  return out;
+}
 const pe = id => state.people.find(p => p.id === id);
 const cl = id => state.clients.find(c => c.id === id);
 const coName = id => (co(id) || {}).name || "Chưa gán công ty";
@@ -2086,18 +2100,26 @@ function mergePublic(res) {
   const packs = Array.isArray(res.packs) ? res.packs : [], out = Object.fromEntries(COLLS.map(c => [c, []]));
   const size = p => (p.tasks || []).length + (p.loanCases || []).length;
   const main = packs.slice().sort((a, b) => size(b) - size(a))[0];
+  const byName = {};   // công ty trùng tên ở nhiều tài khoản: gộp thành một
   packs.forEach((p, k) => {
-    const id = packs.length > 1 ? v => (v ? "p" + k + ":" + v : v) : v => v;
+    const raw = packs.length > 1 ? v => (v ? "p" + k + ":" + v : v) : v => v, id = raw;
     const arr = c => (Array.isArray(p[c]) ? p[c] : []);
-    arr("companies").forEach(x => out.companies.push(Object.assign({}, x, { id: id(x.id) })));
+    const same = {};
+    arr("companies").forEach(x => {
+      const key = String(x.name || "").trim().toLowerCase();
+      if (byName[key]) { same[x.id] = byName[key]; return; }
+      byName[key] = same[x.id] = raw(x.id);
+      out.companies.push(Object.assign({}, x, { id: raw(x.id) }));
+    });
+    const coId = v => (v && same[v]) || raw(v);
     arr("people").forEach(x => out.people.push(Object.assign({}, x, { id: id(x.id) })));
-    arr("clients").forEach(x => out.clients.push(Object.assign({}, x, { id: id(x.id), companyId: id(x.companyId), caseId: id(x.caseId) })));
+    arr("clients").forEach(x => out.clients.push(Object.assign({}, x, { id: id(x.id), companyId: coId(x.companyId), caseId: id(x.caseId) })));
     arr("loanCases").forEach(x => out.loanCases.push(Object.assign({}, x, { id: id(x.id), clientId: id(x.clientId) })));
     arr("glossary").forEach(x => out.glossary.push(Object.assign({}, x, { id: id(x.id) })));
     arr("tasks").forEach(t => {
       const crew = (Array.isArray(t.crew) ? t.crew : []).map(w => Object.assign({}, w, { personId: id(w.personId),
         items: (Array.isArray(w.items) ? w.items : []).map(it => Object.assign({}, it, { clientId: id(it.clientId) })) }));
-      out.tasks.push(Object.assign({}, t, { id: id(t.id), companyId: id(t.companyId), crew, clientId: id(t.clientId),
+      out.tasks.push(Object.assign({}, t, { id: id(t.id), companyId: coId(t.companyId), crew, clientId: id(t.clientId),
         items: crew[0] ? crew[0].items : [], personId: crew[0] ? crew[0].personId : "" }));
     });
     if (p === main) { out.loanRules = arr("loanRules"); out.loanConfig = arr("loanConfig"); }
@@ -3144,7 +3166,7 @@ function openQuick(seed, rect) {
     <div class="q-row">${ICON.clock}<div class="txt">
       <b>${DOW_LONG[d.getDay()]}, ${d.getDate()} tháng ${d.getMonth() + 1}</b>
       <span>${seed.start} – ${seed.end} · ${fmtH(hrs)}</span></div></div>
-    <div class="q-row">${ICON.co}<select id="qCo">${opts(state.companies, seed.companyId, "Thêm công ty mới…")}</select></div>
+    <div class="q-row">${ICON.co}<select id="qCo">${opts(uniqCos(seed.companyId), seed.companyId, "Thêm công ty mới…")}</select></div>
     <div class="q-new hide" id="qCoNew">
       <input class="nm" placeholder="Tên công ty">
       <div class="q-new-r">
@@ -3212,7 +3234,7 @@ function openQuick(seed, rect) {
       const nm = $(".nm", box);
       if (!nm.value.trim()) return nm.focus();
       const o = make(box, nm.value.trim());
-      sel.innerHTML = coll === "clients" ? clientOptsHTML(o.id, label) : coll === "people" ? workerOptsHTML(o.id, "__new", label) : opts(state[coll], o.id, label);
+      sel.innerHTML = coll === "clients" ? clientOptsHTML(o.id, label) : coll === "people" ? workerOptsHTML(o.id, "__new", label) : opts(coll === "companies" ? uniqCos(o.id) : state[coll], o.id, label);
       sel.value = o.id;
       box.classList.add("hide");
       $$("input", box).forEach(i => { i.value = ""; });
@@ -3223,7 +3245,7 @@ function openQuick(seed, rect) {
       if (ev.key === "Enter") { ev.preventDefault(); go(); }
     }));
   };
-  wireNew("#qCo", "#qCoNew", "companies", "Thêm công ty mới…", (box, name) => put("companies", {
+  wireNew("#qCo", "#qCoNew", "companies", "Thêm công ty mới…", (box, name) => sameNameCo(name) || put("companies", {
     name, mode: $(".md", box).value, rate: Number($(".rt", box).value) || 0,
     ot: 1.5, hpd: 8, color: PALETTE[state.companies.length % PALETTE.length],
   }));
@@ -3305,7 +3327,7 @@ function renderMe() {
   const otH = all.filter(t => t.overtime).reduce((s, t) => s + dur(t), 0);
   const doneH = done.reduce((s, t) => s + dur(t), 0);
   const byCo = {};
-  all.forEach(t => { byCo[t.companyId] = (byCo[t.companyId] || 0) + dur(t); });
+  all.forEach(t => { const k = canonCo(t.companyId); byCo[k] = (byCo[k] || 0) + dur(t); });
   const co2 = Object.entries(byCo).sort((a, b) => b[1] - a[1]);
   const max = Math.max(1, ...co2.map(x => x[1]));
   const money = all.reduce((s, t) => s + payOf(t).amount, 0);
@@ -3434,10 +3456,10 @@ function renderGlossary() {
 /* ============================== công việc gom theo công ty ==============================
    Mọi việc của mọi ngày nằm chung một chỗ, chia tab theo công ty, lọc theo xong hay chưa. */
 function renderTasks() {
-  const tab = state.taskTab || "all", q = (state.taskQ || "").trim().toLowerCase();
+  const tab = state.taskTab && state.taskTab !== "all" ? canonCo(state.taskTab) : "all", q = (state.taskQ || "").trim().toLowerCase();
   const all = state.tasks.filter(visible);
   // Mỗi việc một dòng như brief trang 9 và 11: ngày, việc, khách, trạng thái. Công ty đã lọc bằng tab ở trên.
-  const rows = all.filter(t => tab === "all" || (t.companyId || "") === tab)
+  const rows = all.filter(t => tab === "all" || canonCo(t.companyId) === tab)
     .flatMap(t => taskCrew(t).flatMap(w => w.items.map(it => ({ t, it, w }))))
     .filter(r => {
       if (state.taskOnly === "done" && !r.it.done) return false;
@@ -3446,8 +3468,8 @@ function renderTasks() {
       return [r.it.text, (cl(r.it.clientId) || {}).name || "", coName(r.t.companyId), peName(r.w.personId)].join(" ").toLowerCase().includes(q);
     })
     .sort((x, y) => y.t.date.localeCompare(x.t.date) || toMin(x.t.start) - toMin(y.t.start));
-  const count = id => all.filter(t => id === "all" || (t.companyId || "") === id).reduce((n, t) => n + taskItems(t).length, 0);
-  const tabs = [["all", "Tất cả"], ...state.companies.map(c => [c.id, c.name]), ...(all.some(t => !t.companyId) ? [["", "Chưa gán công ty"]] : [])];
+  const count = id => all.filter(t => id === "all" || canonCo(t.companyId) === id).reduce((n, t) => n + taskItems(t).length, 0);
+  const tabs = [["all", "Tất cả"], ...uniqCos().map(c => [c.id, c.name]), ...(all.some(t => !t.companyId) ? [["", "Chưa gán công ty"]] : [])];
   const showCo = tab === "all";
   // Phân trang: mỗi trang 100 việc
   const PER = 100, pages = Math.max(1, Math.ceil(rows.length / PER));
@@ -3722,7 +3744,7 @@ function payrollRows() {
   const { from, to } = payRange();
   const f = iso(from), t = iso(to);
   const sel = state.tasks.filter(x => x.date >= f && x.date <= t && visible(x)
-    && (!state.pay.company || (x.companyId || "") === state.pay.company)
+    && (!state.pay.company || canonCo(x.companyId) === canonCo(state.pay.company))
     && (!state.pay.person || worksHere(x, state.pay.person)));
   // Mỗi người làm trong ca được tính giờ và tiền riêng của người đó.
   const units = sel.flatMap(x => {
@@ -3874,7 +3896,7 @@ function renderPay() {
             ${state.people.map(x => `<option value="${x.id}" ${p.person === x.id ? "selected" : ""}>${esc(x.name)}</option>`).join("")}</select></div>
         <div class="f" style="min-width:160px"><label>Công ty</label>
           <select id="pCompany"><option value="">Tất cả</option>
-            ${state.companies.map(c => `<option value="${c.id}" ${p.company === c.id ? "selected" : ""}>${esc(c.name)}</option>`).join("")}</select></div>
+            ${uniqCos(p.company).map(c => `<option value="${c.id}" ${p.company === c.id ? "selected" : ""}>${esc(c.name)}</option>`).join("")}</select></div>
         <div class="spacer" style="flex:1"></div>
         <div class="seg" id="pGroup">
           <button data-g="person" aria-pressed="${groupPerson}">Theo người</button>
@@ -6257,7 +6279,7 @@ function openTask(t) {
           <div class="f"><label>Công ty</label>
             <select id="tCo">
               <option value="">— chưa gán —</option>
-              ${state.companies.map(c => `<option value="${c.id}" ${c.id === t.companyId ? "selected" : ""}>${esc(c.name)}</option>`).join("")}
+              ${uniqCos(t.companyId).map(c => `<option value="${c.id}" ${c.id === t.companyId ? "selected" : ""}>${esc(c.name)}</option>`).join("")}
               <option value="__new">+ Thêm công ty mới…</option>
             </select>
             <div class="inline-add hide" id="coNew">
@@ -6532,7 +6554,7 @@ function openTask(t) {
   // khỏi phải rời sang màn hình Thiết lập.
   const refill = (sel, coll, label, keep) => {
     sel.innerHTML = `<option value="">— chưa gán —</option>` +
-      state[coll].map(o => `<option value="${o.id}">${esc(o.name)}</option>`).join("") +
+      (coll === "companies" ? uniqCos(keep) : state[coll]).map(o => `<option value="${o.id}">${esc(o.name)}</option>`).join("") +
       `<option value="__new">+ ${label}</option>`;
     sel.value = keep || "";
   };
@@ -6557,7 +6579,7 @@ function openTask(t) {
   };
 
   wire("tCo", "coNew", (box, name) => {
-    const o = put("companies", {
+    const o = sameNameCo(name) || put("companies", {
       name, mode: $("select", box).value, rate: Number($("input.rate", box).value) || 0,
       ot: 1.5, hpd: 8, color: PALETTE[state.companies.length % PALETTE.length],
     });
@@ -6984,6 +7006,7 @@ document.addEventListener("click", e => {
   switch (b.id) {
     case "ncAdd": {
       const n = $("#ncName").value.trim(); if (!n) return $("#ncName").focus();
+      if (sameNameCo(n)) { setStatus(false, "Đã có công ty " + sameNameCo(n).name); return $("#ncName").select(); }
       put("companies", {
         name: n, mode: $("#ncMode").value, rate: Number($("#ncRate").value) || 0,
         ot: Number($("#ncOt").value) || 1.5, hpd: 8, color: PALETTE[state.companies.length % PALETTE.length],
@@ -7649,7 +7672,7 @@ Object.assign(EN, {
 EN_RE.unshift(
   [/^(\d+)–(\d+) \/ (\d+) việc$/, "$1–$2 of $3 tasks"], [/^Trang (\d+)$/, "Page $1"],
   [/^Có (\d+) bản ghi đang lưu trên máy này nhưng chưa có trong tài khoản\.$/, "$1 records are saved on this device but not in your account yet."],
-  [/^Chưa lưu được: (.+)$/, "Not saved: $1"], [/^Đã xoá ca của (.+)$/, "Deleted the shift of $1"],
+  [/^Chưa lưu được: (.+)$/, "Not saved: $1"], [/^Đã xoá ca của (.+)$/, "Deleted the shift of $1"], [/^Đã có công ty (.+)$/, "Company $1 already exists"],
   [/^Xoá ca (\S+) ngày (\S+) của (.+)\? Ca và mọi việc trong ca mất khỏi tài khoản của người đó, không lấy lại được\.$/,
     "Delete the $1 shift on $2 belonging to $3? The shift and all its tasks are removed from their account. This cannot be undone."], [/^Xem công khai · (.+)$/, "Public view · $1"],
 );
