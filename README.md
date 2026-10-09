@@ -2,10 +2,11 @@
 
 Lịch làm việc, bảng lương, hồ sơ khách vay, Rules chứng từ và thuật ngữ trong một trang web. Dùng được trên máy tính và điện thoại, có tiếng Việt và tiếng Anh, giao diện sáng và tối.
 
-- Chưa đăng nhập: dữ liệu lưu trên máy (trình duyệt).
+- Chưa đăng nhập: bản xem công khai. Ai có link cũng xem được mọi thông tin của công ty có tên trùng một **tag công khai** (bảng `public_tags`, hiện là Crystal Loans): Client's Profile, Công việc, Master Data, Rules, Thuật ngữ và Lịch. Chỉ xem; tiền công, kỳ lương, thiết lập và các công ty khác đều ẩn. Không kết nối được Supabase thì dùng dữ liệu lưu trên máy như trước.
 - Đăng nhập: dữ liệu là của riêng tài khoản, lưu trên Supabase, mở ở máy nào cũng thấy.
-- Lịch chung: ai mở trang cũng xem được các ca mọi người đã đặt (chỉ xem). Mỗi người tự chọn ca của mình hiện bao nhiêu chi tiết.
+- Lịch chung: ai mở trang cũng xem được các ca mọi người đã đặt (chỉ xem). Mỗi người tự chọn ca của mình hiện bao nhiêu chi tiết, chung hoặc riêng từng công ty.
 - Tạo ca làm cần đăng nhập.
+- Admin: khoá / mở khoá tài khoản, thêm / bỏ tag công khai, xoá ca của người khác trên lịch chung.
 
 ## File
 
@@ -24,6 +25,11 @@ Lịch làm việc, bảng lương, hồ sơ khách vay, Rules chứng từ và 
 3. Tài khoản mới luôn là **member**. Đặt **admin** chỉ làm trong Supabase:
    ```sql
    update public.profiles set role = 'admin' where email = 'ten@congty.com';
+   ```
+4. Tag công khai: admin sửa trong app (Thiết lập → Tag công khai) hoặc ngay trong Supabase:
+   ```sql
+   insert into public.public_tags (tag) values ('Crystal Loans');
+   delete from public.public_tags where tag = 'Crystal Loans';
    ```
 
 Trong trang chỉ có URL và khoá **publishable** của Supabase (được phép công khai; quyền thật do RLS quyết định). Khoá **secret** để trong `.env` trên máy, không bao giờ đưa lên repo.

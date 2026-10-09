@@ -35,6 +35,8 @@
 --   loan_sheet               bố cục bảng Rules: tên cột, thứ tự, màu, chữ đậm, cột đã xoá
 --   glossary                 thuật ngữ
 --   public_settings          mỗi người chọn ca của mình hiện gì trên lịch chung
+--   public_tags              tag công khai (hiện là Crystal Loans): mọi thông tin của công ty trùng tên tag,
+--                            ai có link cũng xem được, chỉ xem (hàm public_data)
 -- =====================================================================
 
 -- ---------- 0. Dọn bản cũ ----------
@@ -122,6 +124,15 @@ begin
     raise exception 'Không thể tự khoá tài khoản của mình' using errcode = '42501';
   end if;
   update profiles set status = p_status where id = p_id;
+end $$;
+
+-- Admin xoá ca của người khác (bấm vào ca trên lịch chung). Người làm và từng việc của ca xoá theo.
+create or replace function public.admin_delete_task(p_owner uuid, p_id text)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if not is_admin() then raise exception 'Chỉ admin mới xoá được ca của người khác' using errcode = '42501'; end if;
+  delete from tasks where owner_id = p_owner and id = p_id;
+  if not found then raise exception 'Ca này không còn nữa' using errcode = 'P0002'; end if;
 end $$;
 
 -- Mỗi tài khoản là một người làm: người đã đăng nhập xem được danh sách tên các tài khoản đang dùng
@@ -368,15 +379,30 @@ create table if not exists public.glossary (
   updated_at timestamptz not null default now(),
   primary key (owner_id, id)
 );
+-- Cài đặt riêng cho từng công ty: mỗi công ty người dùng lập ra có bộ ô ẩn/hiện của nó.
+-- company_id: mã công ty; '' là ca chưa gán công ty; '*' là cài đặt chung kiểu cũ (dùng khi công ty chưa có cài đặt riêng).
 -- key: calendar.busy (hiện khung giờ), calendar.company, calendar.people, calendar.clients, calendar.tasks.
 -- Chưa có dòng nào thì dùng mặc định: hiện khung giờ, giấu mọi chi tiết khác.
 create table if not exists public.public_settings (
   owner_id   uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  company_id text not null default '*',
   key        text not null check (key in ('calendar.busy', 'calendar.company', 'calendar.people', 'calendar.clients', 'calendar.tasks')),
   is_public  boolean not null,
   updated_at timestamptz not null default now(),
-  primary key (owner_id, key)
+  primary key (owner_id, company_id, key)
 );
+-- bản trước chưa có company_id: thêm cột, cài đặt cũ thành cài đặt chung '*'
+alter table public.public_settings add column if not exists company_id text not null default '*';
+alter table public.public_settings drop constraint if exists public_settings_pkey;
+alter table public.public_settings add primary key (owner_id, company_id, key);
+-- Một ô ẩn/hiện của một ca: cài đặt riêng của công ty, không có thì cài đặt chung, không có nữa thì mặc định.
+create or replace function public._pub(o uuid, c text, k text, d boolean) returns boolean
+language sql stable security definer set search_path = public as $$
+  select coalesce(
+    (select ps.is_public from public_settings ps where ps.owner_id = o and ps.company_id = coalesce(c, '') and ps.key = k),
+    (select ps.is_public from public_settings ps where ps.owner_id = o and ps.company_id = '*' and ps.key = k),
+    d);
+$$;
 
 -- ---------- 4. Quyền: mỗi người chỉ đọc dữ liệu của mình; ghi qua các hàm ở mục 5 ----------
 do $$
@@ -401,6 +427,39 @@ drop policy if exists "public_settings: own" on public.public_settings;
 create policy "public_settings: own" on public.public_settings for all to authenticated
   using (owner_id = auth.uid()) with check (owner_id = auth.uid());
 revoke all on public.public_settings from anon;
+
+-- Tag công khai. Công ty nào (của bất kỳ tài khoản nào) có tên trùng một tag thì mọi thông tin liên quan tới công ty đó
+-- ai có link cũng xem được, kể cả chưa đăng nhập, chỉ xem: ca làm, khách, hồ sơ khách (Client's Profile, Master Data),
+-- cùng Rules và thuật ngữ của tài khoản đó. Tiền công, đơn giá, kỳ lương và mọi công ty khác vẫn ẩn.
+-- Sửa ở đây hoặc admin sửa trong app (Thiết lập → Tag công khai), ví dụ:
+--   insert into public.public_tags (tag) values ('Crystal Loans');
+--   delete from public.public_tags where tag = 'Crystal Loans';
+do $$ begin
+  if to_regclass('public.public_tags') is null then
+    create table public.public_tags (
+      tag        text primary key check (length(btrim(tag)) between 1 and 120),
+      created_at timestamptz not null default now()
+    );
+    -- tag đầu tiên; chạy lại file này không thêm lại nếu đã xoá
+    insert into public.public_tags (tag) values ('Crystal Loans');
+  end if;
+end $$;
+create unique index if not exists public_tags_lower on public.public_tags (lower(btrim(tag)));
+alter table public.public_tags enable row level security;
+drop policy if exists "public_tags: read" on public.public_tags;
+create policy "public_tags: read" on public.public_tags for select to anon, authenticated using (true);
+drop policy if exists "public_tags: admin write" on public.public_tags;
+create policy "public_tags: admin write" on public.public_tags for all to authenticated
+  using (public.is_admin()) with check (public.is_admin());
+revoke all on public.public_tags from anon, authenticated;
+grant select on public.public_tags to anon;
+grant select, insert, delete on public.public_tags to authenticated;
+-- Ca này thuộc công ty có tag công khai không.
+create or replace function public._tagged(o uuid, c text) returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (select 1 from companies co join public_tags g on lower(btrim(g.tag)) = lower(btrim(co.name))
+                 where co.owner_id = o and co.id = c);
+$$;
 
 -- ---------- 5. Đọc ghi dữ liệu app ----------
 -- Một bản ghi của app (JSON) → các bảng. Gọi nội bộ, người dùng không gọi trực tiếp được.
@@ -655,33 +714,68 @@ end $$;
 -- ---------- 6. Lịch chung: cửa duy nhất người chưa đăng nhập gọi được ----------
 create function public.public_calendar(p_from date, p_to date)
 returns table (owner_id uuid, owner_name text, day date, start_time text, end_time text,
-               company text, people text[], clients text[], tasks text[])
+               company text, people text[], clients text[], tasks text[], tagged boolean, task_id text)
 language plpgsql stable security definer set search_path = public as $$
 begin
   if p_from is null or p_to is null or p_to < p_from or p_to - p_from > 62 then
     raise exception 'Khoảng ngày không hợp lệ (tối đa 62 ngày)' using errcode = '22023';
   end if;
   return query
-  with s as (
-    select pr.id, pr.display_name,
-      coalesce((select ps.is_public from public_settings ps where ps.owner_id = pr.id and ps.key = 'calendar.busy'), true)     as busy,
-      coalesce((select ps.is_public from public_settings ps where ps.owner_id = pr.id and ps.key = 'calendar.company'), false) as co,
-      coalesce((select ps.is_public from public_settings ps where ps.owner_id = pr.id and ps.key = 'calendar.people'), false)  as pe,
-      coalesce((select ps.is_public from public_settings ps where ps.owner_id = pr.id and ps.key = 'calendar.clients'), false) as cl,
-      coalesce((select ps.is_public from public_settings ps where ps.owner_id = pr.id and ps.key = 'calendar.tasks'), false)   as tk
-    from profiles pr where pr.status = 'active'
-  )
-  select t.owner_id, s.display_name, t.work_date, left(t.start_time::text, 5), left(t.end_time::text, 5),
+  select t.owner_id, pr.display_name, t.work_date, left(t.start_time::text, 5), left(t.end_time::text, 5),
     case when s.co then (select c.name from companies c where c.owner_id = t.owner_id and c.id = t.company_id) end,
     case when s.pe then array(select distinct p.name from task_workers w
       join people p on p.owner_id = w.owner_id and p.id = w.person_id where w.owner_id = t.owner_id and w.task_id = t.id) end,
     case when s.cl then array(select distinct k.name from task_items it
       join clients k on k.owner_id = it.owner_id and k.id = it.client_id where it.owner_id = t.owner_id and it.task_id = t.id) end,
     case when s.tk then array(select it.text from task_items it where it.owner_id = t.owner_id and it.task_id = t.id and it.text <> ''
-      order by it.worker_pos, it.position) end
-  from tasks t join s on s.id = t.owner_id and s.busy
-  where t.work_date between p_from and p_to and t.start_time is not null and t.end_time is not null
+      order by it.worker_pos, it.position) end,
+    _tagged(t.owner_id, t.company_id), t.id
+  from tasks t
+  join profiles pr on pr.id = t.owner_id and pr.status = 'active'
+  -- cài đặt theo công ty của chính ca đó
+  cross join lateral (select _pub(t.owner_id, t.company_id, 'calendar.busy', true) as busy,
+    _pub(t.owner_id, t.company_id, 'calendar.company', false) as co, _pub(t.owner_id, t.company_id, 'calendar.people', false) as pe,
+    _pub(t.owner_id, t.company_id, 'calendar.clients', false) as cl, _pub(t.owner_id, t.company_id, 'calendar.tasks', false) as tk) s
+  where s.busy and t.work_date between p_from and p_to and t.start_time is not null and t.end_time is not null
   order by 3, 4;
+end $$;
+
+-- Thông tin công khai theo tag: ai cũng gọi được, chỉ đọc. Mỗi tài khoản có công ty trùng tag là một gói gồm
+-- công ty đó (chỉ tên, màu), người làm trong các ca (chỉ tên, màu), ca làm, khách và hồ sơ khách của công ty đó,
+-- cùng Rules, form hồ sơ và thuật ngữ của tài khoản. Không có đơn giá, hệ số lương, ngày lễ hay công ty khác.
+create or replace function public.public_data() returns jsonb
+language plpgsql stable security definer set search_path = public as $$
+declare r record; d jsonb; tks jsonb; cls jsonb; kcs jsonb; cl_ids text[]; pids text[]; packs jsonb := '[]'::jsonb;
+begin
+  for r in
+    select c.owner_id, coalesce(nullif(pr.display_name, ''), split_part(pr.email, '@', 1)) as owner_name, array_agg(c.id order by c.id) as cos
+    from companies c join profiles pr on pr.id = c.owner_id and pr.status = 'active'
+    where exists (select 1 from public_tags g where lower(btrim(g.tag)) = lower(btrim(c.name)))
+    group by c.owner_id, pr.display_name, pr.email
+    order by c.owner_id
+  loop
+    d := _load_docs(r.owner_id, array['people', 'clients', 'tasks', 'loanCases', 'loanRules', 'loanConfig', 'glossary']);
+    tks := coalesce((select jsonb_agg(x) from jsonb_array_elements(d->'tasks') x where x->>'companyId' = any(r.cos)), '[]'::jsonb);
+    -- khách của công ty đó, cộng khách có việc trong các ca đó
+    cl_ids := array(
+      select x->>'id' from jsonb_array_elements(d->'clients') x where x->>'companyId' = any(r.cos)
+      union
+      select it->>'clientId' from jsonb_array_elements(tks) t, jsonb_array_elements(_arr(t->'crew')) w, jsonb_array_elements(_arr(w->'items')) it
+      where coalesce(it->>'clientId', '') <> '');
+    cls := coalesce((select jsonb_agg(x) from jsonb_array_elements(d->'clients') x where x->>'id' = any(cl_ids)), '[]'::jsonb);
+    kcs := coalesce((select jsonb_agg(x) from jsonb_array_elements(d->'loanCases') x
+      where x->>'clientId' = any(cl_ids) or x->>'id' in (select k->>'caseId' from jsonb_array_elements(cls) k where k->>'caseId' is not null)), '[]'::jsonb);
+    pids := array(select distinct w->>'personId' from jsonb_array_elements(tks) t, jsonb_array_elements(_arr(t->'crew')) w);
+    packs := packs || jsonb_build_array(jsonb_build_object(
+      'owner', r.owner_id, 'name', r.owner_name,
+      'companies', (select jsonb_agg(jsonb_strip_nulls(jsonb_build_object('id', c.id, 'name', c.name, 'color', c.color)) order by c.id)
+        from companies c where c.owner_id = r.owner_id and c.id = any(r.cos)),
+      'people', coalesce((select jsonb_agg(jsonb_strip_nulls(jsonb_build_object('id', x->>'id', 'name', x->>'name', 'color', x->>'color')))
+        from jsonb_array_elements(d->'people') x where x->>'id' = any(pids)), '[]'::jsonb),
+      'clients', cls, 'tasks', tks, 'loanCases', kcs,
+      'loanRules', d->'loanRules', 'loanConfig', d->'loanConfig', 'glossary', d->'glossary'));
+  end loop;
+  return jsonb_build_object('tags', coalesce((select jsonb_agg(g.tag order by g.tag) from public_tags g), '[]'::jsonb), 'packs', packs);
 end $$;
 
 -- ---------- 7. Ai được gọi hàm nào ----------
@@ -690,18 +784,20 @@ declare f text;
 begin
   -- hàm nội bộ: không ai gọi qua API
   foreach f in array array['public._save_doc(uuid, text, text, jsonb)', 'public._delete_doc(uuid, text, text)', 'public._load_docs(uuid, text[])',
-    'public.handle_new_user()'] loop
+    'public.handle_new_user()', 'public._pub(uuid, text, text, boolean)', 'public._tagged(uuid, text)'] loop
     execute format('revoke execute on function %s from public, anon, authenticated', f);
   end loop;
   -- người đã đăng nhập
   foreach f in array array['public.load_docs(text[])', 'public.save_doc(text, text, jsonb)', 'public.save_docs(jsonb)',
-    'public.delete_doc(text, text)', 'public.admin_set_status(uuid, text)', 'public.list_workers()'] loop
+    'public.delete_doc(text, text)', 'public.admin_set_status(uuid, text)', 'public.list_workers()', 'public.admin_delete_task(uuid, text)'] loop
     execute format('revoke execute on function %s from public, anon', f);
     execute format('grant execute on function %s to authenticated', f);
   end loop;
   -- ai cũng gọi được
   execute 'revoke execute on function public.public_calendar(date, date) from public';
   execute 'grant execute on function public.public_calendar(date, date) to anon, authenticated';
+  execute 'revoke execute on function public.public_data() from public';
+  execute 'grant execute on function public.public_data() to anon, authenticated';
 end $$;
 
 -- ---------- 8. Chuyển dữ liệu từ bản 2 (app_docs có owner_id), nếu có ----------
