@@ -13,14 +13,13 @@ Lịch làm việc, bảng lương, hồ sơ khách vay, Rules chứng từ và 
 | File | Là gì |
 |---|---|
 | `lich-cong-luong.html` | Bản gốc của app, sửa ở đây |
-| `index.html` | Bản để đưa lên web, dựng từ bản gốc bằng `python tools/build.py` |
-| `supabase/schema.sql` | Toàn bộ database: bảng, quyền (RLS), hàm |
-| `tools/serve.py` | Chạy thử trên máy: `python tools/serve.py` → http://localhost:5500 |
-| `tools/build.py` | Dựng lại `index.html` sau khi sửa bản gốc |
+| `index.html` | Bản để đưa lên web, dựng từ bản gốc |
+
+File database (`supabase/schema.sql`) và công cụ dựng, chạy thử (`tools/`) giữ riêng trên máy, không có trong repo.
 
 ## Cài Supabase
 
-1. Supabase → **SQL Editor** → dán toàn bộ `supabase/schema.sql` → **Run**. Chạy lại nhiều lần cũng không sao.
+1. Supabase → **SQL Editor** → dán toàn bộ file `schema.sql` (giữ riêng, không có trong repo) → **Run**. Chạy lại nhiều lần cũng không sao.
 2. **Authentication → URL Configuration**: đặt **Site URL** và thêm vào **Redirect URLs** địa chỉ trang (ví dụ `http://localhost:5500` hoặc địa chỉ GitHub Pages), để link xác nhận email và link đặt lại mật khẩu mở đúng trang.
 3. Tài khoản mới luôn là **member**. Đặt **admin** chỉ làm trong Supabase:
    ```sql
