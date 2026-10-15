@@ -349,7 +349,12 @@ select.mini,input.mini{
 .doc-row .doc{flex:1; min-width:0}
 .od-btn{flex:none; width:30px; height:30px; display:grid; place-items:center; padding:0; border-radius:50%; border:1px solid var(--line); background:var(--surface-2); color:var(--ink-2); cursor:pointer; text-decoration:none}
 .od-btn:hover{background:var(--surface-3); color:var(--ink)}
-.od-btn.go{color:var(--accent-ink); border-color:color-mix(in srgb, var(--accent) 45%, transparent)}
+.od-btn.go{color:var(--accent-ink); border-color:color-mix(in srgb, var(--accent) 45%, transparent); position:relative}
+/* link cho người chưa đăng nhập xem: chấm xanh lá ở góc */
+.od-btn.go.pub::after{content:""; position:absolute; top:-2px; right:-2px; width:9px; height:9px; border-radius:50%; background:var(--ok); border:2px solid var(--surface)}
+.od-pub{font-size:13px; align-items:flex-start}
+.od-pub input{flex:none; margin-top:2px}
+.od-pub span.t{white-space:normal; overflow:visible}
 .od-btn.add{border-style:dashed; opacity:0}
 .docs li:hover .od-btn.add, .od-btn.add:focus-visible{opacity:1}
 @media (hover:none){ .od-btn.add{opacity:.55} }
@@ -358,7 +363,7 @@ select.mini,input.mini{
 .od-bar button{display:flex; align-items:center; gap:6px; padding:6px 10px; border:0; border-radius:8px; background:var(--surface-3); color:var(--ink); font:600 12.5px/1 inherit; cursor:pointer}
 .od-pop{position:absolute; left:28px; top:calc(100% + 4px); z-index:21; width:min(440px, calc(100% - 36px)); min-width:260px; padding:14px; border-radius:14px; background:var(--surface); border:1px solid var(--line-2); box-shadow:0 16px 40px rgba(0,0,0,.35); display:flex; flex-direction:column; gap:10px}
 .od-pop .lbl{margin:0}
-.od-pop input{width:100%; padding:10px 12px; border-radius:10px; border:1.5px solid var(--accent); background:var(--surface-2); color:var(--ink); font:inherit; font-size:14px}
+.od-pop input[type="url"]{width:100%; padding:10px 12px; border-radius:10px; border:1.5px solid var(--accent); background:var(--surface-2); color:var(--ink); font:inherit; font-size:14px}
 .od-row{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
 .od-row small{color:var(--muted); font-size:12px}
 .od-msg{color:var(--ot); font-size:12.5px}
@@ -1243,6 +1248,9 @@ details.gloss .gloss-body{padding:6px 0 2px 28px}
 .pub-toggles{display:flex; flex-direction:column; gap:4px}
 /* bản xem công khai: không có Thiết lập, Ngày của tôi, Kỳ tính lương */
 .pub-mode #setBtn, .pub-mode #subTabsBar{display:none !important}
+/* chưa đăng nhập: chỉ có màn hình đăng nhập, không thấy gì phía sau, không đóng được */
+.gate-mode .app{visibility:hidden}
+.gate-mode #authScreen [data-auth="close"]{display:none}
 .tag-list{display:flex; flex-wrap:wrap; gap:8px}
 .tag-chip{display:inline-flex; align-items:center; gap:4px; padding:5px 6px 5px 12px; border:1px solid var(--line); border-radius:999px; background:var(--surface-2); font-size:13px}
 .tag-chip b{font-weight:600}
@@ -2030,6 +2038,7 @@ const isDark = () => { const c = document.documentElement.getAttribute("data-the
 // Nút trên thanh trên cùng: chưa đăng nhập là "Đăng nhập"; đã đăng nhập là ảnh đại diện, tên, email, bấm mở menu.
 function markAuth() {
   document.body.classList.toggle("pub-mode", auth.mode === "public");
+  document.body.classList.toggle("gate-mode", auth.mode === "gate");
   const b = $("#authBtn"); if (!b) return;
   const inApp = auth.mode === "app" && auth.profile;
   if (!inApp) {
@@ -2129,7 +2138,8 @@ async function loadShared() {
     if (Array.isArray(p.loanRules)) out.rules[k] = { loanRules: p.loanRules, loanConfig: Array.isArray(p.loanConfig) ? p.loanConfig : [] };
     const arr = c => (Array.isArray(p[c]) ? p[c] : []), flags = {};
     arr("companies").forEach(x => { const sh = x.share || {}; flags[x.id] = sh;
-      out.companies.push(Object.assign({}, x, { id: id(x.id), shared: Object.assign({}, who, sh) })); });
+      // chủ không cho hiện tên công ty trên lịch chung: gọi là "Công ty của …"
+      out.companies.push(Object.assign({}, x, { id: id(x.id), name: x.name || "Công ty của " + (p.name || "người khác"), shared: Object.assign({}, who, sh) })); });
     arr("people").forEach(x => out.people.push(Object.assign({}, x, { id: id(x.id), shared: who })));
     arr("clients").forEach(x => out.clients.push(Object.assign({}, x, { id: id(x.id), companyId: id(x.companyId), caseId: id(x.caseId), shared: who })));
     arr("loanCases").forEach(x => out.loanCases.push(Object.assign({}, x, { id: id(x.id), clientId: id(x.clientId), shared: who })));
@@ -2161,7 +2171,7 @@ function workerOptsHTML(sel, newValue, newLabel) {
 /* ---- lịch chung: ca của mọi người, chỉ xem ---- */
 // Tải một lần cho cả khung lịch tháng quanh ngày đang xem (6 tuần, đủ cho xem ngày, tuần, tháng).
 async function loadExt(force) {
-  if (!auth.sb) return;
+  if (!auth.sb || auth.mode !== "app") { auth.ext = []; return; }   // lịch chung chỉ dành cho tài khoản đã đăng nhập
   const a = startOfWeek(startOfMonth(state.cursor)), key = iso(a);
   if (!force && key === auth.extKey) return;
   auth.extKey = key;
@@ -2275,9 +2285,26 @@ async function enterPublic() {
   return true;
 }
 // Chưa đăng nhập: xem công khai; không gọi được Supabase (ví dụ trong claude.ai) thì dùng dữ liệu trên máy như trước.
+// Chưa đăng nhập: không xem được thông tin gì, chỉ có màn hình đăng nhập (không đóng được).
+// Không gọi được Supabase (ví dụ trong claude.ai) thì vẫn dùng dữ liệu trên máy như trước.
 async function startGuest() {
-  if (auth.sb && await enterPublic()) return;
+  if (auth.sb && await sbReachable()) return enterGate();
   await startLocal();
+}
+// Gọi thử một hàm cần đăng nhập: bị từ chối nghĩa là Supabase vẫn trả lời; lỗi mạng nghĩa là không gọi được.
+async function sbReachable() {
+  auth.down = false;
+  try { const r = await auth.sb.rpc("shared_data", {}); if (r && r.error) sbErrText(r.error); }
+  catch (e) { sbErrText(e); }
+  return !auth.down;
+}
+function enterGate() {
+  if (auth.mode === "app") return;
+  auth.mode = "gate"; db = null; remote = false; auth.ext = []; auth.extKey = ""; auth.tags = null;
+  COLLS.forEach(c => { state[c] = []; });
+  setStatus(false, "Chưa đăng nhập");
+  markAuth(); render();
+  if (!$("#authScreen")) openLogin(false, "Đăng nhập để xem lịch, công việc và hồ sơ khách.");
 }
 // Bản xem công khai chỉ xem: mọi lần lưu bị chặn, trả màn hình về như cũ rồi mời đăng nhập.
 function pubLock() {
@@ -2300,7 +2327,7 @@ function needLogin(then) {
   openLogin(false, "Đăng nhập để tạo ca làm.");
   return true;
 }
-function closeLogin() { auth.afterLogin = null; $("#modalHost").innerHTML = ""; }
+function closeLogin() { if (auth.mode === "gate") return; auth.afterLogin = null; $("#modalHost").innerHTML = ""; }
 // Đăng nhập xong: đóng hộp, rồi làm tiếp việc đang dở (ví dụ mở lại bảng tạo ca đúng khung giờ vừa kéo).
 function loginDone() {
   const then = auth.afterLogin;
@@ -2435,6 +2462,7 @@ function pubCompaniesHTML() {
         <summary><span class="stage-chev" aria-hidden="true"></span><i class="swatch" style="background:${c.color || "#7C8B9E"}"></i>
           <b translate="no">${esc(c.name || "Công ty")}</b>${isTagged(c.name) ? `<span class="pill live">Công khai theo tag</span>` : ""}<span class="pub-co-state ${custom ? "own" : ""}">${custom ? "Cài đặt riêng" : "Theo cài đặt chung"}</span></summary>
         <div class="pub-co-body"><div class="lbl" style="margin:0">Lịch chung</div><div class="pub-toggles">${pubToggles(c.id)}</div>
+          <small style="color:var(--muted);font-size:12px">Bật "Hiện nội dung việc" thì tài khoản khác cũng thấy các việc này ở trang Công việc (tên khách, người làm, công ty theo các ô trên).</small>
           <div class="share-grp"><div class="lbl">Tài khoản khác được xem</div><div class="pub-toggles">${SHARE_KEYS.map(([k, n]) =>
             `<label class="chk"><input type="checkbox" data-pub="${k}" data-pubco="${esc(c.id)}" ${pubVal(c.id, k) ? "checked" : ""}><span class="t">${n}</span></label>`).join("")}</div>
             <small style="color:var(--muted);font-size:12px">Chỉ tài khoản đã đăng nhập thấy. Họ chỉ xem, không sửa được.</small></div>
@@ -2464,7 +2492,7 @@ function tagCardHTML(admin) {
       ${admin ? `<div class="f" style="max-width:440px"><div class="opt-row"><input id="tagNew" maxlength="120" placeholder="Tên công ty, ví dụ Crystal Loans" aria-label="Tag mới">
         <button class="btn primary" data-auth="tagadd">Thêm tag</button></div></div>` : ""}
       ${mine.length ? `<div class="hint-note"><span>Công ty của bạn đang công khai:</span> <b translate="no">${mine.map(c => esc(c.name)).join(", ")}</b></div>` : ""}
-      <div class="note-box"><span>Công ty nào có tên trùng một tag thì ai có link cũng xem được mọi thông tin liên quan, kể cả chưa đăng nhập: ca làm trên lịch, Công việc, Client's Profile và Master Data của khách thuộc công ty đó, cùng Rules và thuật ngữ của tài khoản có công ty đó. Chỉ xem, không sửa được. Tiền công, kỳ lương, thiết lập và các công ty khác vẫn ẩn.</span>
+      <div class="note-box"><span>Công ty nào có tên trùng một tag thì mọi tài khoản đã đăng nhập xem được Công việc, Client's Profile và Master Data của khách thuộc công ty đó (kèm Rules của chủ hồ sơ). Chỉ xem, không sửa được. Người chưa đăng nhập không thấy gì. Tiền công, kỳ lương và các công ty khác vẫn ẩn.</span>
         <span>${admin ? "Admin thêm, bỏ tag ở đây hoặc trong Supabase (bảng public_tags)." : "Chỉ admin thêm hoặc bỏ tag được."}</span></div>
     </div>
   </div>`;
@@ -2498,7 +2526,7 @@ function accountCardsHTML() {
     <div class="card-b">
       ${!ready ? (my && my.error ? `<div class="hint-note">${esc(my.error)}</div>` : `<div class="empty">Đang tải…</div>`)
         : `<div class="pub-toggles">${pubToggles("*")}</div>${pubCompaniesHTML()}`}
-      <div class="note-box" style="margin-top:12px">Ai mở trang, kể cả chưa đăng nhập, cũng thấy các ca trên lịch chung, chỉ xem chứ không sửa được. Ở đây bạn chọn ca của mình hiện những gì; mặc định chỉ hiện khung giờ. Các ô ở trên là cài đặt chung; mở từng công ty để chọn riêng, công ty chưa chỉnh riêng thì theo cài đặt chung. Hồ sơ khách, rules, thuật ngữ và lương luôn là của riêng bạn.</div>
+      <div class="note-box" style="margin-top:12px">Mọi tài khoản đã đăng nhập thấy các ca trên lịch chung, chỉ xem chứ không sửa được; người chưa đăng nhập không thấy gì. Ở đây bạn chọn ca của mình hiện những gì; mặc định chỉ hiện khung giờ. Các ô ở trên là cài đặt chung; mở từng công ty để chọn riêng, công ty chưa chỉnh riêng thì theo cài đặt chung.</div>
     </div>
   </div>
   ${tagCardHTML(admin)}
@@ -4858,6 +4886,8 @@ function docHTML(r) {
 const OD_GO = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg>';
 const OD_LINK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>';
 const odLinkOf = (c, key) => { const u = ((c && c.links) || {})[key]; return typeof u === "string" && /^https:\/\//i.test(u) ? u : ""; };
+// Link có cho người chưa đăng nhập (bản xem công khai) xem không: người gắn link tự chọn, mặc định không.
+const odIsPublic = (c, key) => !!(c && c.linkPub && c.linkPub[key]);
 const odDocEl = n => { const e = n && (n.nodeType === 1 ? n : n.parentElement); return e && e.closest ? e.closest("[data-docname]") : null; };
 const odRow = key => { const n = [...document.querySelectorAll("[data-docname]")].find(x => x.dataset.docname === key); return n ? n.closest("li") : null; };
 function odClose(which) {
@@ -4889,6 +4919,7 @@ function odOpen(key) {
   pop.innerHTML = `<label class="lbl" for="odUrl">Link OneDrive của chứng từ này</label>
     <input id="odUrl" type="url" inputmode="url" autocomplete="off" spellcheck="false" placeholder="Dán link OneDrive (https://…)" value="${esc(u)}">
     <div class="od-msg" id="odMsg" role="alert"></div>
+    <label class="chk od-pub"><input type="checkbox" id="odPub" ${odIsPublic(c, key) ? "checked" : ""}><span class="t">Cho tài khoản khác xem link này khi hồ sơ được công khai</span></label>
     <div class="od-row"><small>${esc("Chỉ hồ sơ của " + (loanPeople(c).length ? caseName(c) : (cl(c.clientId) || {}).name || caseName(c)) + " có link này")}</small><div class="spacer" style="flex:1"></div>
       ${u ? `<button type="button" class="btn" data-odsave="del">Bỏ link</button>` : ""}<button type="button" class="btn primary" data-odsave="ok">Lưu</button></div>`;
   li.appendChild(pop);
@@ -4898,10 +4929,13 @@ function odSave(del) {
   const pop = $("#odPop"), c = curCase(); if (!pop || !c) return;
   const key = pop.dataset.key, v = del ? "" : $("#odUrl").value.trim();
   if (v && !/^https:\/\/\S+$/i.test(v)) { $("#odMsg").textContent = "Link phải bắt đầu bằng https://"; return $("#odUrl").focus(); }
-  const k = cloneCase(c);
+  const k = cloneCase(c), pub = !!v && !!($("#odPub") && $("#odPub").checked);
   k.links = Object.assign({}, k.links);
+  k.linkPub = Object.assign({}, k.linkPub);
   if (v) k.links[key] = v; else delete k.links[key];
+  if (pub) k.linkPub[key] = true; else delete k.linkPub[key];
   if (!Object.keys(k.links).length) delete k.links;
+  if (!Object.keys(k.linkPub).length) delete k.linkPub;
   odClose();
   saveCase(k);
 }
@@ -4965,9 +4999,9 @@ function loanOutHTML(c) {
         <div class="stage-bar"><i style="width:${n ? k / n * 100 : 0}%"></i></div>
         ${s.groups.map(g => `<div class="sg">
           <div class="sg-h"><b>${esc(g.group.title)}</b>${g.group.sub ? `<small>${esc(g.group.sub)}</small>` : ""}</div>
-          <ul class="docs">${g.docs.map(d => { const u = pubMode() ? "" : odLinkOf(c, d.key), ro = pubMode() || !!c.shared; return `<li><div class="doc-row"><label class="doc ${got[d.key] ? "got" : ""}">
+          <ul class="docs">${g.docs.map(d => { const pubL = odIsPublic(c, d.key), u = pubMode() && !pubL ? "" : odLinkOf(c, d.key), ro = pubMode() || !!c.shared; return `<li><div class="doc-row"><label class="doc ${got[d.key] ? "got" : ""}">
             <input type="checkbox" data-doc="${esc(d.key)}" ${got[d.key] ? "checked" : ""}><span data-docname="${esc(d.key)}">${docHTML(d.rule)}</span>
-          </label>${u ? `<a class="od-btn go" href="${esc(u)}" target="_blank" rel="noopener noreferrer" title="Mở trên OneDrive" aria-label="Mở trên OneDrive">${OD_GO}</a>` : ""}${ro ? ""
+          </label>${u ? `<a class="od-btn go ${pubL && !pubMode() ? "pub" : ""}" href="${esc(u)}" target="_blank" rel="noopener noreferrer" title="${pubL && !pubMode() ? "Mở trên OneDrive · công khai cho tài khoản khác" : "Mở trên OneDrive"}" aria-label="Mở trên OneDrive">${OD_GO}</a>` : ""}${ro ? ""
             : `<button type="button" class="od-btn add" data-odlink="${esc(d.key)}" title="${u ? "Sửa link OneDrive" : "Gắn link OneDrive"}" aria-label="${u ? "Sửa link OneDrive" : "Gắn link OneDrive"}">${OD_LINK}</button>`}</div></li>`; }).join("")}</ul>
         </div>`).join("")}
       </div>
@@ -8010,7 +8044,8 @@ Object.assign(EN, {
   "Mất kết nối trực tiếp, tải lại trang để cập nhật.": "Live connection lost, reload the page to update.",
   "Xem công khai": "Public view", "Bản xem công khai:": "Public view:", "Chỉ xem. Thông tin khác được ẩn.": "View only. Everything else is hidden.",
   "Đây là bản xem công khai, chỉ xem được. Đăng nhập để thêm hoặc sửa.": "This is the public view, read only. Log in to add or edit.",
-  "Tag công khai": "Public tags", "Xoá hồ sơ và khách": "Delete the file and the client", "Chỉ xoá hồ sơ": "Delete the file only",
+  "Tag công khai": "Public tags",
+  "Bật \"Hiện nội dung việc\" thì tài khoản khác cũng thấy các việc này ở trang Công việc (tên khách, người làm, công ty theo các ô trên).": "With \"Show task details\" on, other accounts also see these tasks on their Tasks page (client, worker and company names follow the boxes above).", "Xoá hồ sơ và khách": "Delete the file and the client", "Chỉ xoá hồ sơ": "Delete the file only",
   "Ca và việc vẫn giữ, cột Khách hàng để trống. Khách không còn trong ô chọn khách.": "Shifts and tasks stay, with the Client column left empty. The client disappears from the client picker.",
   "Giữ khách trên lịch và trong ô chọn khách.": "Keep the client on the calendar and in the client picker.",
   "Các việc vẫn giữ nguyên (giờ làm, lương không đổi), chỉ không còn tên khách. Khách cũng không còn trong ô chọn khách.": "The tasks stay as they are (hours and pay unchanged), only without the client. The client also disappears from the client picker.",
@@ -8024,7 +8059,12 @@ Object.assign(EN, {
   "Chỉ xem": "View only", "Chia sẻ kỳ lương": "Shared pay periods", "Chỉ xem: việc của người khác": "View only: someone else's task", "Tiêu đề & định nghĩa": "Title & definition", "Chỉ tiêu đề": "Title only", "Tìm trong tiêu đề": "Search titles",
   "Phạm vi tìm": "Search in", "Thử từ khoá khác, hoặc chọn Tiêu đề & định nghĩa để tìm cả trong định nghĩa.": "Try another keyword, or choose Title & definition to search definitions too.", "Mở trên OneDrive": "Open in OneDrive", "Gắn link OneDrive": "Add OneDrive link", "Sửa link OneDrive": "Edit OneDrive link",
   "Link OneDrive của chứng từ này": "OneDrive link for this document", "Dán link OneDrive (https://…)": "Paste a OneDrive link (https://…)", "Bỏ link": "Remove link",
-  "Link phải bắt đầu bằng https://": "The link must start with https://", "Xoá ca của người khác": "Delete someone else's shift", "Bạn là admin nên xoá được ca này.": "As an admin you can delete this shift.", "người khác": "someone else", "Tag mới": "New tag", "Bỏ tag": "Remove tag", "Thêm tag": "Add tag", "Tên công ty, ví dụ Crystal Loans": "Company name, e.g. Crystal Loans",
+  "Link phải bắt đầu bằng https://": "The link must start with https://",
+  "Cho tài khoản khác xem link này khi hồ sơ được công khai": "Let other accounts see this link when the file is public",
+  "Mở trên OneDrive · công khai cho tài khoản khác": "Open in OneDrive · public to other accounts",
+  "Chưa đăng nhập": "Not logged in", "Đăng nhập để xem lịch, công việc và hồ sơ khách.": "Log in to see the calendar, tasks and client files.",
+  "Mọi tài khoản đã đăng nhập thấy các ca trên lịch chung, chỉ xem chứ không sửa được; người chưa đăng nhập không thấy gì. Ở đây bạn chọn ca của mình hiện những gì; mặc định chỉ hiện khung giờ. Các ô ở trên là cài đặt chung; mở từng công ty để chọn riêng, công ty chưa chỉnh riêng thì theo cài đặt chung.": "Every logged-in account sees the shifts on the shared calendar, view only; people who are not logged in see nothing. Here you choose what your shifts show; by default only the time slot. The boxes above are the general settings; open a company to choose separately for it, and companies you have not changed follow the general settings.",
+  "Công ty nào có tên trùng một tag thì mọi tài khoản đã đăng nhập xem được Công việc, Client's Profile và Master Data của khách thuộc công ty đó (kèm Rules của chủ hồ sơ). Chỉ xem, không sửa được. Người chưa đăng nhập không thấy gì. Tiền công, kỳ lương và các công ty khác vẫn ẩn.": "When a company's name matches a tag, every logged-in account can see its Tasks, plus the Client's Profile and Master Data of its clients (with the owner's Rules). View only, nothing can be edited. People who are not logged in see nothing. Pay, pay periods and every other company stay hidden.", "Xoá ca của người khác": "Delete someone else's shift", "Bạn là admin nên xoá được ca này.": "As an admin you can delete this shift.", "người khác": "someone else", "Tag mới": "New tag", "Bỏ tag": "Remove tag", "Thêm tag": "Add tag", "Tên công ty, ví dụ Crystal Loans": "Company name, e.g. Crystal Loans",
   "Chưa có tag nào: không có gì công khai ngoài lịch chung.": "No tags yet: nothing is public apart from the shared calendar.",
   "Công ty của bạn đang công khai:": "Your companies that are public:", "Công khai theo tag": "Public by tag", "Tag này đã có.": "This tag already exists.",
   "Công ty nào có tên trùng một tag thì ai có link cũng xem được mọi thông tin liên quan, kể cả chưa đăng nhập: ca làm trên lịch, Công việc, Client's Profile và Master Data của khách thuộc công ty đó, cùng Rules và thuật ngữ của tài khoản có công ty đó. Chỉ xem, không sửa được. Tiền công, kỳ lương, thiết lập và các công ty khác vẫn ẩn.":
@@ -8035,7 +8075,7 @@ Object.assign(EN, {
 EN_RE.unshift(
   [/^(\d+)–(\d+) \/ (\d+) việc$/, "$1–$2 of $3 tasks"], [/^Trang (\d+)$/, "Page $1"],
   [/^Có (\d+) bản ghi đang lưu trên máy này nhưng chưa có trong tài khoản\.$/, "$1 records are saved on this device but not in your account yet."],
-  [/^Chưa lưu được: (.+)$/, "Not saved: $1"], [/^Đã xoá ca của (.+)$/, "Deleted the shift of $1"], [/^Xoá hồ sơ (.+)\?$/, "Delete the file of $1?"],
+  [/^Chưa lưu được: (.+)$/, "Not saved: $1"], [/^Đã xoá ca của (.+)$/, "Deleted the shift of $1"], [/^Công ty của (.+)$/, "$1's company"], [/^Xoá hồ sơ (.+)\?$/, "Delete the file of $1?"],
   [/^Khách này đang gắn với (\d+) việc trong (\d+) ca \((.+)\)\.$/, "This client is on $1 tasks in $2 shifts ($3)."],
   [/^Chỉ (.+) sửa được dữ liệu này$/, "Only $1 can edit this"], [/^của (.+)$/, "by $1"], [/^(.+) · chia sẻ$/, "$1 · shared"], [/^(.+) · của (.+)$/, "$1 · by $2"], [/^(\d+)–(\d+) \/ (\d+) mục$/, "$1–$2 of $3 entries"], [/^Chỉ hồ sơ của (.+) có link này$/, "Only $1's file has this link"], [/^Đã có công ty (.+)$/, "Company $1 already exists"],
   [/^Xoá ca (\S+) ngày (\S+) của (.+)\? Ca và mọi việc trong ca mất khỏi tài khoản của người đó, không lấy lại được\.$/,
