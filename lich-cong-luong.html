@@ -1695,7 +1695,7 @@ function asOwner(c, fn) {
 }
 const allTasks = () => state.tasks.concat(SH().tasks);
 const isShared = id => String(id || "").startsWith("sh:");
-const ownTag = x => `<span class="own-tag">${esc("của " + ((x && x.shared && x.shared.name) || "người khác"))}</span>`;
+// Dữ liệu tài khoản khác chia sẻ: không hiện tên người sở hữu (đã bỏ nhãn "của …"), chỉ khoá không cho sửa.
 const pe = id => state.people.find(p => p.id === id) || SH().people.find(p => p.id === id);
 const cl = id => state.clients.find(c => c.id === id) || SH().clients.find(c => c.id === id);
 const coName = id => (co(id) || {}).name || "Chưa gán công ty";
@@ -3661,9 +3661,9 @@ function renderTasks() {
       <div class="card-b">
         ${rows.length ? `<div class="tbl-wrap"><table class="tk-table">
           <thead><tr><th style="width:118px">Ngày tháng</th><th>Việc cần làm</th><th style="width:26%">Khách hàng</th>${showCo ? `<th style="width:15%">Công ty</th>` : ""}<th style="width:150px">Trạng thái</th><th style="width:48px"></th></tr></thead>
-          <tbody>${shown.map(r => `<tr class="${r.it.done ? "is-done" : ""}">
+          <tbody>${shown.map(r => `<tr class="${r.it.done ? "is-done" : ""} ${r.t.shared ? "shared-row" : ""}">
             <td class="num tk-d">${dmy(r.t.date)}</td>
-            <td class="tk-t"><span translate="no" class="it-t ${r.it.done ? "got" : ""}">${r.it.text ? esc(r.it.text) : L("Việc")}</span>${r.t.shared ? ownTag(r.t) : ""}</td>
+            <td class="tk-t"><span translate="no" class="it-t ${r.it.done ? "got" : ""}">${r.it.text ? esc(r.it.text) : L("Việc")}</span></td>
             <td class="tk-c">${r.it.clientId ? `<button type="button" class="it-cl" data-openclient="${r.it.clientId}" title="Mở hồ sơ khách">${esc((cl(r.it.clientId) || {}).name || "Khách")}</button>` : muted("—")}</td>
             ${showCo ? `<td class="tk-cc"><span class="tk-co"><i class="swatch" style="background:${coColor(r.t.companyId)}"></i>${esc(coName(r.t.companyId))}</span></td>` : ""}
             <td class="tk-s">${statusSel(r.t.id, r.it.id, r.it.done, !!r.t.shared)}</td>
@@ -4552,7 +4552,7 @@ function saveCase(c) {
 // hồ sơ chưa gắn khách trên lịch có mã "case:…", sau đó là khách chỉ có trên lịch.
 function clientChoices() {
   const out = [], seen = new Set();
-  const lbl = (x, name) => name + (x.shared ? " · của " + x.shared.name : "");
+  const lbl = (x, name) => name;
   allCases().slice().sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || "")).forEach(k => {
     if (!loanPeople(k).length) return;   // hồ sơ chưa nhập tên thì chưa có gì để chọn
     const cid = caseClientId(k), x = cid && cl(cid);
@@ -4621,7 +4621,7 @@ function renderLoan() {
       ${casePickHTML(c)}
       <button class="btn" id="loanNew">+ Hồ sơ mới</button>
       <div class="spacer"></div>
-      ${c && c.shared ? `<span class="ro-note">${ownTag(c)}<span class="lbl">Chỉ xem</span></span><button class="btn" id="loanCopy">Sao chép danh sách chứng từ</button>`
+      ${c && c.shared ? `<span class="ro-note"><span class="lbl">Chỉ xem</span></span><button class="btn" id="loanCopy">Sao chép danh sách chứng từ</button>`
         : c ? `<button class="btn" data-lt="fields">Sửa form nhập liệu</button>
         <button class="btn" id="loanCopy">Sao chép danh sách chứng từ</button>
         <button class="btn danger" data-loan-del="${c.id}">Xoá hồ sơ</button>` : ""}
@@ -4645,7 +4645,7 @@ function casePickHTML(c) {
   if (!rows.length) return "";
   return `<select id="casePick" data-search class="mini" style="width:auto;min-width:240px;max-width:100%" aria-label="Chọn khách hàng">
     ${c ? "" : `<option value="" selected>— chọn khách hàng —</option>`}
-    ${rows.map(k => `<option value="${k.id}" ${c && k.id === c.id ? "selected" : ""}>${esc(caseName(k) + (k.shared ? " · của " + k.shared.name : ""))}</option>`).join("")}
+    ${rows.map(k => `<option value="${k.id}" ${c && k.id === c.id ? "selected" : ""}>${esc(caseName(k))}</option>`).join("")}
   </select>`;
 }
 const importNote = text => `<div class="note-box" style="display:flex;flex-direction:column;gap:10px;align-items:flex-start">
@@ -4699,9 +4699,9 @@ function casesHTML() {
     const got = docs.filter(d => (c.received || {})[d.key]).length;
     const jobs = caseJobs(c), cid = caseClientId(c);
     const d = c.createdAt ? new Date(c.createdAt) : null;
-    return `<tr class="case-row" data-case-open="${c.id}">
+    return `<tr class="case-row ${c.shared ? "shared-row" : ""}" data-case-open="${c.id}">
         <td class="num md-num">${i + 1}</td>
-        <td class="md-name"><b class="md-link">${esc(people.length ? people[0].name : "(chưa nhập tên)")}</b>${c.shared ? ownTag(c) : ""}
+        <td class="md-name"><b class="md-link">${esc(people.length ? people[0].name : "(chưa nhập tên)")}</b>
           ${people.length > 1 ? `<div style="font-size:12px;color:var(--muted)">${people.slice(1).map(x => `${esc(x.label)}: ${esc(x.name)}`).join(" · ")}</div>` : ""}
 </td>
         ${cols.map(f => `<td class="md-f" data-label="${esc(L(f.label))}">${esc(f.type === "bool" ? yesNo((c.values || {})[f.id]) : valueText(f, (c.values || {})[f.id]) || "—")}</td>`).join("")}
