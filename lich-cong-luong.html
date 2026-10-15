@@ -343,6 +343,27 @@ select.mini,input.mini{
 .doc:hover{background:var(--surface-2)}
 .doc input{accent-color:var(--accent); width:16px; height:16px; margin:2px 0 0; flex:0 0 16px}
 .doc.got span{color:var(--muted); text-decoration:line-through; text-decoration-thickness:1px}
+/* link OneDrive của từng chứng từ */
+.docs li{position:relative}
+.doc-row{display:flex; align-items:center; gap:6px}
+.doc-row .doc{flex:1; min-width:0}
+.od-btn{flex:none; width:30px; height:30px; display:grid; place-items:center; padding:0; border-radius:50%; border:1px solid var(--line); background:var(--surface-2); color:var(--ink-2); cursor:pointer; text-decoration:none}
+.od-btn:hover{background:var(--surface-3); color:var(--ink)}
+.od-btn.go{color:var(--accent-ink); border-color:color-mix(in srgb, var(--accent) 45%, transparent)}
+.od-btn.add{border-style:dashed; opacity:0}
+.docs li:hover .od-btn.add, .od-btn.add:focus-visible{opacity:1}
+@media (hover:none){ .od-btn.add{opacity:.55} }
+.od-btn svg, .od-bar svg{width:15px; height:15px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round}
+.od-bar{position:absolute; bottom:calc(100% - 2px); z-index:20; display:flex; padding:4px; border-radius:12px; background:var(--surface); border:1px solid var(--line-2); box-shadow:0 10px 30px rgba(0,0,0,.3)}
+.od-bar button{display:flex; align-items:center; gap:6px; padding:6px 10px; border:0; border-radius:8px; background:var(--surface-3); color:var(--ink); font:600 12.5px/1 inherit; cursor:pointer}
+.od-pop{position:absolute; left:28px; top:calc(100% + 4px); z-index:21; width:min(440px, calc(100% - 36px)); min-width:260px; padding:14px; border-radius:14px; background:var(--surface); border:1px solid var(--line-2); box-shadow:0 16px 40px rgba(0,0,0,.35); display:flex; flex-direction:column; gap:10px}
+.od-pop .lbl{margin:0}
+.od-pop input{width:100%; padding:10px 12px; border-radius:10px; border:1.5px solid var(--accent); background:var(--surface-2); color:var(--ink); font:inherit; font-size:14px}
+.od-row{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+.od-row small{color:var(--muted); font-size:12px}
+.od-msg{color:var(--ot); font-size:12.5px}
+.od-msg:empty{display:none}
+@media (max-width:640px){ .od-pop{left:0; width:100%; min-width:0} }
 .doc a{color:var(--accent-ink); text-underline-offset:2px}
 .bt{flex:0 0 30px; height:30px; border-radius:var(--r-xs); border:1px solid var(--line-2); background:var(--surface); font-weight:700; color:var(--muted)}
 .bt[aria-pressed="true"]{background:var(--ink); border-color:var(--ink); color:var(--surface)}
@@ -629,7 +650,7 @@ select option,select optgroup{background-color:var(--surface); color:var(--ink);
 }
 .ev::before{content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--c,var(--accent))}
 .ev:hover{box-shadow:var(--shadow-2); z-index:7}
-.ev .t{font-family:var(--mono); font-size:10.5px; color:var(--muted); line-height:1.3}
+.ev .t{font-family:var(--mono); font-size:10.5px; color:var(--muted); line-height:1.3; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
 .ev .n{font-size:12px; font-weight:600; line-height:1.25; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
 .ev .s{font-size:11px; color:var(--ink-2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
 .ev.ot{background:var(--ot-soft); border-color:var(--ot-line)}
@@ -1075,8 +1096,48 @@ details.gloss .gloss-body{padding:6px 0 2px 28px}
 .picker-empty{padding:8px 10px; color:var(--muted); font-size:13px}
 .picker-group{padding:8px 10px 3px; font-family:var(--mono); font-size:10px; letter-spacing:.11em; text-transform:uppercase; color:var(--muted)}
 .tk-table td{vertical-align:middle; padding:9px 12px}
+/* cột cố định độ rộng, chữ dài tự xuống dòng trong ô như Wrap Text của Excel */
+.tk-table{table-layout:fixed; width:100%}
+.tk-table td.tk-t, .tk-table td.tk-c, .tk-table td.tk-cc{overflow-wrap:anywhere; word-break:break-word}
+.tk-table .it-cl{white-space:normal; text-align:left; max-width:100%; overflow-wrap:anywhere}
+.own-tag{display:inline-block; margin-left:6px; padding:1px 7px; border-radius:6px; background:var(--accent-soft, rgba(90,140,255,.15)); color:var(--accent-ink); font-size:11px; font-weight:600; white-space:nowrap; vertical-align:1px}
+.dc-opt{display:flex; gap:10px; align-items:flex-start; padding:10px 12px; border:1px solid var(--line); border-radius:12px; cursor:pointer}
+.dc-opt:has(input:checked){border-color:var(--accent); background:var(--surface-2)}
+.dc-opt input{margin-top:3px; accent-color:var(--accent)}
+.dc-opt span{display:flex; flex-direction:column; gap:2px; font-size:13.5px}
+.dc-opt small{color:var(--muted); font-size:12.5px; line-height:1.45}
+.md-sort{width:auto; min-width:170px}
+.loan-bar .md-q{width:min(280px,100%); flex:0 1 280px}
+.md-table td.md-name{min-width:170px}
+.md-table td.md-opt .btn{white-space:nowrap}
+@media (max-width:1100px){
+  .md-table thead{display:none}
+  .md-table, .md-table tbody{display:block}
+  .md-table tr.case-row{display:grid; grid-template-columns:repeat(auto-fill, minmax(132px, 1fr)); gap:12px 18px; padding:14px 16px; border-bottom:1px solid var(--line); align-items:start}
+  .md-table tr.case-row:last-child{border-bottom:none}
+  .md-table tr.case-row td{display:block; padding:0; border:none; white-space:normal; text-align:left; min-width:0}
+  .md-table tr.case-row td.md-num{display:none}
+  .md-table tr.case-row td.md-name{grid-column:1 / -2; grid-row:1; min-width:0; font-size:15px}
+  .md-table tr.case-row td.md-opt{grid-column:-2 / -1; grid-row:1; justify-self:end}
+  .md-table tr.case-row td.md-f{display:flex; flex-direction:column; gap:2px; font-size:13.5px; overflow-wrap:anywhere}
+  .md-table tr.case-row td.md-f::before{content:attr(data-label); font-size:10.5px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--muted)}
+}
+@media (max-width:640px){
+  .md-table tr.case-row{grid-template-columns:repeat(2, minmax(0, 1fr)); padding:14px 12px}
+  .md-table tr.case-row td.md-name{grid-column:1 / -1}
+  .md-table tr.case-row td.md-opt{grid-column:1 / -1; grid-row:auto; justify-self:start; order:99}
+  /* thanh công cụ: số hồ sơ + Hồ sơ mới ở trên, ô tìm và sắp xếp ở dưới */
+  #loanNew{order:2} .loan-bar .md-sort{order:3; flex:0 0 auto; min-width:0} .loan-bar .md-q{order:4; flex:1 1 150px; width:auto}
+}
+.md-table th[data-mdsort]{cursor:pointer; user-select:none}
+.md-table th[data-mdsort]:hover{color:var(--ink)}
+.md-table th .sort-ar{font-size:10px; margin-left:3px}
+.share-grp{display:flex; flex-direction:column; gap:4px; border-top:1px dashed var(--line); padding-top:10px; width:100%}
+.share-grp .lbl{margin:0 0 4px}
+.ro-note{display:flex; gap:8px; align-items:center}
 .tk-table .it-t.got{color:var(--muted); text-decoration:line-through; text-decoration-thickness:1px}
-.tk-table .it-cl{padding:1px 9px; border-radius:999px; border:1px solid var(--accent-line); background:var(--accent-soft); color:var(--accent-ink); font-size:12px; white-space:nowrap}
+.tk-table .it-cl{padding:2px 9px; border-radius:12px; border:1px solid var(--accent-line); background:var(--accent-soft); color:var(--accent-ink); font-size:12px; line-height:1.4;
+  display:inline-block; max-width:100%; white-space:normal; overflow-wrap:anywhere; text-align:left}
 .tk-table .it-cl:hover{background:var(--accent); color:#fff; border-color:var(--accent)}
 .pager{display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:16px}
 .pager button{width:40px; height:40px; border-radius:50%; display:grid; place-items:center; font-size:14.5px; color:var(--ink-2);
@@ -1350,6 +1411,22 @@ input.pct:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px v
 }
 .status .dot{width:7px; height:7px; border-radius:50%; background:var(--ok)}
 .status .dot.off{background:var(--muted)}
+@media (min-width:641px) and (max-width:1280px){ .status span, #themeTxt{display:none} .status{padding:0 4px} }
+@media (min-width:641px) and (max-width:900px){
+  .tk-table thead{display:none}
+  .tk-table,.tk-table tbody{display:block}
+  .tk-table tr{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto auto; grid-template-areas:"t t t go" "c co d s"; gap:8px 14px; padding:12px 14px; border-bottom:1px solid var(--line); align-items:center}
+  .tk-table tr:last-child{border-bottom:none}
+  .tk-table td{display:block; padding:0; border:none}
+  .tk-table td.tk-t{grid-area:t; font-weight:600; font-size:14.5px}
+  .tk-table td.tk-go{grid-area:go; justify-self:end}
+  .tk-table td.tk-c{grid-area:c}
+  .tk-table td.tk-cc{grid-area:co}
+  .tk-table td.tk-d{grid-area:d; font-size:12.5px; color:var(--muted); white-space:nowrap}
+  .tk-table td.tk-s{grid-area:s; justify-self:end}
+}
+/* đã đăng nhập: giao diện sáng/tối có trong menu tài khoản, màn hình vừa thì bỏ nút trên thanh cho khỏi rớt dòng */
+@media (min-width:641px) and (max-width:1100px){ body:has(#authBtn.prof-btn) #themeBtn{display:none} }
 
 .sheet-toggle{display:none}
 @media (max-width:900px){
@@ -1585,23 +1662,37 @@ const state = {
 };
 let db = null, remote = false;
 
-const co = id => state.companies.find(c => c.id === id);
+const co = id => state.companies.find(c => c.id === id) || ((auth.shared || {}).companies || []).find(c => c.id === id);
 // Công ty trùng tên (không phân biệt hoa thường, khoảng trắng) là một công ty khi lọc và chọn.
 const coKey = c => String((c && c.name) || "").trim().toLowerCase();
 const sameNameCo = name => state.companies.find(c => coKey(c) === String(name || "").trim().toLowerCase());
 // Mã đại diện cho cả nhóm trùng tên: công ty lập trước nhất.
-const canonCo = id => { const c = co(id); if (!c) return id || ""; const f = state.companies.find(x => coKey(x) === coKey(c)); return f ? f.id : id; };
+const canonCo = id => { const c = co(id); if (!c) return id || ""; const f = state.companies.concat(SH().companies).find(x => coKey(x) === coKey(c)); return f ? f.id : id; };
 // Mỗi tên một công ty; keep: công ty đang chọn thì đứng đại diện cho nhóm của nó, để ô chọn vẫn đúng.
-function uniqCos(keep) {
+function uniqCos(keep, withShared) {
   const k = co(keep), seen = new Set(), out = [];
-  state.companies.forEach(c => {
+  (withShared ? state.companies.concat(SH().companies) : state.companies).forEach(c => {
     const key = coKey(c); if (seen.has(key)) return;
     seen.add(key); out.push(k && coKey(k) === key ? k : c);
   });
   return out;
 }
-const pe = id => state.people.find(p => p.id === id);
-const cl = id => state.clients.find(c => c.id === id);
+// Dữ liệu tài khoản khác chia sẻ (mục 6, 7): giữ riêng, không lẫn vào dữ liệu của mình. Mã có tiền tố "sh:".
+const SH = () => auth.shared || { companies: [], people: [], clients: [], loanCases: [], tasks: [] };
+const allCases = () => state.loanCases.concat(SH().loanCases);
+// Hồ sơ của người khác: dựng theo Rules và form của chính chủ hồ sơ (mỗi tài khoản một bộ riêng).
+function asOwner(c, fn) {
+  const r = c && c.shared && auth.shared && auth.shared.rules && auth.shared.rules[c.shared.k];
+  if (!r) return fn();
+  const keep = [state.loanRules, state.loanConfig];
+  state.loanRules = r.loanRules; state.loanConfig = r.loanConfig;
+  try { return fn(); } finally { state.loanRules = keep[0]; state.loanConfig = keep[1]; }
+}
+const allTasks = () => state.tasks.concat(SH().tasks);
+const isShared = id => String(id || "").startsWith("sh:");
+const ownTag = x => `<span class="own-tag">${esc("của " + ((x && x.shared && x.shared.name) || "người khác"))}</span>`;
+const pe = id => state.people.find(p => p.id === id) || SH().people.find(p => p.id === id);
+const cl = id => state.clients.find(c => c.id === id) || SH().clients.find(c => c.id === id);
 const coName = id => (co(id) || {}).name || "Chưa gán công ty";
 const coColor = id => (co(id) || {}).color || "#7C8B9E";
 const peName = id => (pe(id) || {}).name || "Chưa gán người";
@@ -1700,7 +1791,13 @@ function savePrefs() {
 }
 
 // quiet: lưu mà không vẽ lại cả trang, dùng khi đang sửa trong ô để không mất con trỏ.
+function sharedDenied(coll, id) {
+  const x = (SH()[coll] || []).find(o => o.id === id), who = (x && x.shared && x.shared.name) || "người chia sẻ";
+  setStatus(false, "Chỉ " + who + " sửa được dữ liệu này");
+  setTimeout(render, 0);   // trả màn hình về như cũ
+}
 function put(coll, obj, quiet) {
+  if (isShared(obj.id)) { sharedDenied(coll, obj.id); return obj; }
   if (!obj.id) obj.id = uid();
   if (pubLock()) return obj;
   const arr = state[coll], i = arr.findIndex(x => x.id === obj.id);
@@ -1711,6 +1808,7 @@ function put(coll, obj, quiet) {
   return obj;
 }
 function drop(coll, id) {
+  if (isShared(id)) { sharedDenied(coll, id); return; }
   if (pubLock()) return;
   state[coll] = state[coll].filter(x => x.id !== id);
   render();
@@ -1728,6 +1826,7 @@ function dbErr(e) {
 function setStatus(ok, txt) {
   const el = $("#status"); if (!el) return;
   el.innerHTML = `<i class="dot ${ok ? "" : "off"}"></i><span>${esc(txt)}</span>`;
+  el.title = L(txt);   // màn hình vừa chỉ còn chấm màu: rê chuột để đọc
 }
 
 /* ============================== Supabase: đăng nhập, dữ liệu riêng từng người, lịch chung ==============================
@@ -1742,6 +1841,8 @@ const PUBLIC_KEYS = [
   ["calendar.people", "Hiện tên người làm"], ["calendar.clients", "Hiện tên khách hàng"], ["calendar.tasks", "Hiện nội dung việc"],
 ];
 const PUBLIC_DEFAULT = { "calendar.busy": true };
+// Chia sẻ với các tài khoản đã đăng nhập, riêng từng công ty (mặc định tắt).
+const SHARE_KEYS = [["share.tasks", "Công việc (Tasks) của công ty này"], ["share.cases", "Hồ sơ khách & Master Data của công ty này"], ["share.pay", "Kỳ lương của tôi ở công ty này"]];
 // mode: "boot" lúc mới mở · "local" dữ liệu trên máy · "app" đã đăng nhập, dữ liệu trên Supabase
 const auth = { sb: null, session: null, profile: null, mode: "boot", down: false, lastErr: "", members: null, mySettings: null,
   channel: null, importable: null, ext: [], extKey: "", localSubbed: false, tags: null, pubSnap: "", pubAsk: 0 };
@@ -1833,6 +1934,7 @@ async function enterApp(session) {
     // mỗi tài khoản là một người làm: mặc định "Tôi" là chính tài khoản, trừ khi đã chọn người khác ở Thiết lập
     state.me = prof.person_id && pe(prof.person_id) ? prof.person_id : selfPid;
     loadWorkers();
+    auth.shared = null; loadShared();
     setStatus(true, "Đã đồng bộ · " + (prof.display_name || prof.email));
     subscribeDocs();
     markAuth();
@@ -1907,7 +2009,7 @@ function pushAccountPrefs(p) {
 function leaveApp() {
   clearTimeout(prefsT);
   if (auth.channel && auth.sb) { auth.sb.removeChannel(auth.channel); auth.channel = null; }
-  auth.session = null; auth.profile = null; auth.members = null; auth.mySettings = null; auth.importable = null; auth.extKey = ""; auth.tags = null;
+  auth.session = null; auth.profile = null; auth.members = null; auth.mySettings = null; auth.importable = null; auth.extKey = ""; auth.tags = null; auth.shared = null;
   auth.mode = "boot"; remote = false; db = null;
   COLLS.forEach(c => { state[c] = []; });
   $("#modalHost").innerHTML = "";
@@ -2016,6 +2118,32 @@ function useWorker(v) {
   put("people", { id: v, name: w.display_name || "", accountId: w.id, color: PALETTE[(state.people.length + 2) % PALETTE.length] }, true);
   return v;
 }
+// Dữ liệu các tài khoản khác chia sẻ (Thiết lập → Chia sẻ theo công ty). Chưa chạy schema mới thì bỏ qua.
+async function loadShared() {
+  let res;
+  try { res = await sbq(auth.sb.rpc("shared_data", {})); } catch (e) { auth.shared = { companies: [], people: [], clients: [], loanCases: [], tasks: [] }; return; }
+  if (auth.mode !== "app") return;
+  const out = { companies: [], people: [], clients: [], loanCases: [], tasks: [], rules: {} };
+  (Array.isArray(res && res.packs) ? res.packs : []).forEach((p, k) => {
+    const id = v => (v ? "sh:" + k + ":" + v : v), who = { owner: p.owner, name: p.name || "", k };
+    if (Array.isArray(p.loanRules)) out.rules[k] = { loanRules: p.loanRules, loanConfig: Array.isArray(p.loanConfig) ? p.loanConfig : [] };
+    const arr = c => (Array.isArray(p[c]) ? p[c] : []), flags = {};
+    arr("companies").forEach(x => { const sh = x.share || {}; flags[x.id] = sh;
+      out.companies.push(Object.assign({}, x, { id: id(x.id), shared: Object.assign({}, who, sh) })); });
+    arr("people").forEach(x => out.people.push(Object.assign({}, x, { id: id(x.id), shared: who })));
+    arr("clients").forEach(x => out.clients.push(Object.assign({}, x, { id: id(x.id), companyId: id(x.companyId), caseId: id(x.caseId), shared: who })));
+    arr("loanCases").forEach(x => out.loanCases.push(Object.assign({}, x, { id: id(x.id), clientId: id(x.clientId), shared: who })));
+    arr("tasks").forEach(t => {
+      const crew = (Array.isArray(t.crew) ? t.crew : []).map(w => Object.assign({}, w, { personId: id(w.personId),
+        items: (Array.isArray(w.items) ? w.items : []).map(it => Object.assign({}, it, { clientId: id(it.clientId) })) }));
+      const sh = flags[t.companyId] || {};
+      out.tasks.push(Object.assign({}, t, { id: id(t.id), companyId: id(t.companyId), crew, clientId: id(t.clientId),
+        items: crew[0] ? crew[0].items : [], personId: crew[0] ? crew[0].personId : "", shared: Object.assign({}, who, { list: !!sh.tasks, pay: !!sh.pay }) }));
+    });
+  });
+  auth.shared = out;
+  render();
+}
 async function loadWorkers() {
   try { auth.workers = (await sbq(auth.sb.rpc("list_workers", {}))) || []; }
   catch (e) { auth.workers = []; }
@@ -2051,7 +2179,7 @@ async function loadExt(force) {
   if (state.view === "cal") renderCalendar();
 }
 const extOn = d => auth.ext.filter(t => t.date === iso(d));
-const findTask = id => state.tasks.find(x => x.id === id) || auth.ext.find(x => x.id === id);
+const findTask = id => allTasks().find(x => x.id === id) || auth.ext.find(x => x.id === id);
 const extSummary = t => [t.ext.company ? t.ext.name : "", ...t.ext.people, ...t.ext.clients, ...t.ext.tasks].filter(Boolean).join(" · ");
 // Bấm vào ca của người khác: chỉ xem, hiện đúng những gì người đó cho phép.
 function openExtTask(t) {
@@ -2302,11 +2430,14 @@ function pubCompaniesHTML() {
   return `<div class="pub-cos">
     <div class="lbl" style="margin:16px 0 8px">Theo từng công ty</div>
     ${state.companies.length ? state.companies.map(c => {
-      const own = auth.mySettings.co[c.id], custom = own && Object.keys(own).length;
+      const own = auth.mySettings.co[c.id], custom = own && PUBLIC_KEYS.some(([k]) => own[k] !== undefined);
       return `<details class="pub-co" data-pubopen="${esc(c.id)}" ${open[c.id] ? "open" : ""}>
         <summary><span class="stage-chev" aria-hidden="true"></span><i class="swatch" style="background:${c.color || "#7C8B9E"}"></i>
           <b translate="no">${esc(c.name || "Công ty")}</b>${isTagged(c.name) ? `<span class="pill live">Công khai theo tag</span>` : ""}<span class="pub-co-state ${custom ? "own" : ""}">${custom ? "Cài đặt riêng" : "Theo cài đặt chung"}</span></summary>
-        <div class="pub-co-body"><div class="pub-toggles">${pubToggles(c.id)}</div>
+        <div class="pub-co-body"><div class="lbl" style="margin:0">Lịch chung</div><div class="pub-toggles">${pubToggles(c.id)}</div>
+          <div class="share-grp"><div class="lbl">Tài khoản khác được xem</div><div class="pub-toggles">${SHARE_KEYS.map(([k, n]) =>
+            `<label class="chk"><input type="checkbox" data-pub="${k}" data-pubco="${esc(c.id)}" ${pubVal(c.id, k) ? "checked" : ""}><span class="t">${n}</span></label>`).join("")}</div>
+            <small style="color:var(--muted);font-size:12px">Chỉ tài khoản đã đăng nhập thấy. Họ chỉ xem, không sửa được.</small></div>
           ${custom ? `<button type="button" class="btn" data-pubreset="${esc(c.id)}">Dùng lại cài đặt chung</button>` : ""}</div>
       </details>`;
     }).join("") : muted("Chưa có công ty nào. Công ty lập ở thẻ Công ty bên dưới hoặc khi tạo ca sẽ tự hiện ở đây.")}
@@ -2363,7 +2494,7 @@ function accountCardsHTML() {
     </div>
   </div>
   <div class="card">
-    <div class="card-h"><h2>Ca của tôi trên lịch chung</h2></div>
+    <div class="card-h"><h2>Chia sẻ theo công ty</h2></div>
     <div class="card-b">
       ${!ready ? (my && my.error ? `<div class="hint-note">${esc(my.error)}</div>` : `<div class="empty">Đang tải…</div>`)
         : `<div class="pub-toggles">${pubToggles("*")}</div>${pubCompaniesHTML()}`}
@@ -2411,8 +2542,8 @@ document.addEventListener("click", e => {
   const b = e.target.closest && e.target.closest("[data-pubreset]"); if (!b || auth.mode !== "app") return;
   const co = b.dataset.pubreset;
   b.disabled = true;
-  sbq(auth.sb.from("public_settings").delete().eq("owner_id", myId()).eq("company_id", co))
-    .then(() => { delete auth.mySettings.co[co]; auth.extKey = ""; renderSettings(); })
+  sbq(auth.sb.from("public_settings").delete().eq("owner_id", myId()).eq("company_id", co).in("key", PUBLIC_KEYS.map(x => x[0])))
+    .then(() => { const o = auth.mySettings.co[co] || {}; PUBLIC_KEYS.forEach(([k]) => delete o[k]); auth.extKey = ""; renderSettings(); })
     .catch(err => { b.disabled = false; setStatus(false, sbErrText(err)); });
 });
 function addTag(b) {
@@ -3411,10 +3542,24 @@ function rowHTML(t) {
    Lịch tháng để nhìn cả tháng và chọn ngày; bên phải là các ca của ngày đang chọn. */
 /* ============================== glossary ==============================
    Từ điển tự gõ: thêm, sửa, xoá, tìm và sắp xếp A–Z hay Z–A. */
+// chữ thường, bỏ dấu tiếng Việt (đ → d) để tìm không cần gõ dấu
+const foldVN = s => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/g, "d");
+const glossMode = () => { try { return localStorage.getItem("cakip.glossMode") === "title" ? "title" : "all"; } catch (e) { return "all"; } };
 function renderGlossary() {
-  const q = (state.glossQ || "").trim().toLowerCase(), desc = state.glossSort === "za";
+  const q = (state.glossQ || "").trim().toLowerCase(), desc = state.glossSort === "za", mode = glossMode();
   const all = state.glossary.slice().sort((x, y) => (desc ? -1 : 1) * (x.term || "").localeCompare(y.term || "", "vi", { sensitivity: "base" }));
-  const list = all.filter(g => !q || [g.term, g.body].join(" ").toLowerCase().includes(q));
+  // Hai chế độ tìm: cả tiêu đề lẫn định nghĩa (như trước), hoặc chỉ tiêu đề (không xét định nghĩa).
+  // Chỉ tiêu đề: không phân biệt hoa thường, có dấu hay không; trùng khớp tên đứng đầu, rồi bắt đầu bằng từ khoá, rồi có chứa.
+  let list;
+  if (!q) list = all;
+  else if (mode === "title") {
+    const fq = foldVN(q), rank = g => { const t = (g.term || "").trim().toLowerCase(), f = foldVN(t);
+      return t === q ? 0 : f === fq ? 1 : f.startsWith(fq) ? 2 : f.includes(fq) ? 3 : 9; };
+    list = all.map(g => [rank(g), g]).filter(x => x[0] < 9).sort((a, b) => a[0] - b[0]).map(x => x[1]);
+  } else list = all.filter(g => [g.term, g.body].join(" ").toLowerCase().includes(q));
+  const GPER = 50, gpages = Math.max(1, Math.ceil(list.length / GPER));
+  const gpage = state.glossPage = Math.min(Math.max(1, state.glossPage || 1), gpages);
+  const shownG = list.slice((gpage - 1) * GPER, gpage * GPER);
 
   // Trang soạn một mục: tiêu đề lớn, khung nội dung, nút SAVE quay về danh sách.
   if (state.glossEdit) {
@@ -3437,19 +3582,22 @@ function renderGlossary() {
       <button class="btn" id="glossSort" title="Đổi chiều sắp xếp">${desc ? "Z–A" : "A–Z"}</button>
       <span class="gloss-count">${all.length} mục${q ? ` · tìm thấy ${list.length}` : ""}</span>
       <div class="spacer" style="flex:1"></div>
-      <input id="glossQ" class="gloss-search" placeholder="Tìm kiếm" value="${esc(state.glossQ || "")}" aria-label="Tìm trong thuật ngữ">
+      <div class="seg" id="glossMode" aria-label="Phạm vi tìm">${[["all", "Tiêu đề & định nghĩa"], ["title", "Chỉ tiêu đề"]].map(([k, n]) =>
+        `<button type="button" data-glossmode="${k}" aria-pressed="${mode === k}">${n}</button>`).join("")}</div>
+      <input id="glossQ" class="gloss-search" placeholder="${mode === "title" ? "Tìm trong tiêu đề" : "Tìm kiếm"}" value="${esc(state.glossQ || "")}" aria-label="Tìm trong thuật ngữ">
       <button class="btn save-btn" id="glossNew">Tạo mới</button>
     </div>
     <div class="gloss-list">
-      ${list.length ? list.map(g => `<details class="gloss" data-gid="${g.id}" ${(state.glossOpen || {})[g.id] ? "open" : ""}>
+      ${list.length ? shownG.map(g => `<details class="gloss" data-gid="${g.id}" ${(state.glossOpen || {})[g.id] ? "open" : ""}>
         <summary class="gloss-h"><span class="stage-chev" aria-hidden="true"></span>${(g.term || "").trim() ? `<b translate="no">${esc(g.term)}</b>` : `<b>(chưa đặt tên)</b>`}
           <div class="spacer" style="flex:1"></div>
           <button class="btn" data-gedit="${g.id}" title="Sửa nội dung">✎ Sửa</button></summary>
         <div class="gloss-body">${(g.body || "").trim() ? `<span translate="no">${esc(g.body).replace(/\n/g, "<br>")}</span>` : muted("Chưa có định nghĩa.")}</div>
       </details>`).join("")
       : `<div class="empty"><b>${all.length ? "Không tìm thấy mục nào." : "Thuật ngữ đang trống."}</b>
-        ${all.length ? "Thử từ khoá khác." : 'Bấm "Tạo mới" để thêm mục đầu tiên, ví dụ "Refinance".'}</div>`}
+        ${all.length ? (mode === "title" ? "Thử từ khoá khác, hoặc chọn Tiêu đề & định nghĩa để tìm cả trong định nghĩa." : "Thử từ khoá khác.") : 'Bấm "Tạo mới" để thêm mục đầu tiên, ví dụ "Refinance".'}</div>`}
     </div>
+    ${pagerHTML(gpage, gpages, list.length, GPER, "gloss")}
   </div>`;
 }
 
@@ -3457,7 +3605,7 @@ function renderGlossary() {
    Mọi việc của mọi ngày nằm chung một chỗ, chia tab theo công ty, lọc theo xong hay chưa. */
 function renderTasks() {
   const tab = state.taskTab && state.taskTab !== "all" ? canonCo(state.taskTab) : "all", q = (state.taskQ || "").trim().toLowerCase();
-  const all = state.tasks.filter(visible);
+  const all = allTasks().filter(t => !t.shared || t.shared.list).filter(visible);
   // Mỗi việc một dòng như brief trang 9 và 11: ngày, việc, khách, trạng thái. Công ty đã lọc bằng tab ở trên.
   const rows = all.filter(t => tab === "all" || canonCo(t.companyId) === tab)
     .flatMap(t => taskCrew(t).flatMap(w => w.items.map(it => ({ t, it, w }))))
@@ -3469,7 +3617,7 @@ function renderTasks() {
     })
     .sort((x, y) => y.t.date.localeCompare(x.t.date) || toMin(x.t.start) - toMin(y.t.start));
   const count = id => all.filter(t => id === "all" || canonCo(t.companyId) === id).reduce((n, t) => n + taskItems(t).length, 0);
-  const tabs = [["all", "Tất cả"], ...uniqCos().map(c => [c.id, c.name]), ...(all.some(t => !t.companyId) ? [["", "Chưa gán công ty"]] : [])];
+  const tabs = [["all", "Tất cả"], ...uniqCos("", true).filter(c => all.some(t => canonCo(t.companyId) === c.id) || !c.shared).map(c => [c.id, c.name]), ...(all.some(t => !t.companyId) ? [["", "Chưa gán công ty"]] : [])];
   const showCo = tab === "all";
   // Phân trang: mỗi trang 100 việc
   const PER = 100, pages = Math.max(1, Math.ceil(rows.length / PER));
@@ -3489,13 +3637,13 @@ function renderTasks() {
         <span class="lbl">${rows.filter(r => r.it.done).length}/${rows.length} việc xong</span></div>
       <div class="card-b">
         ${rows.length ? `<div class="tbl-wrap"><table class="tk-table">
-          <thead><tr><th style="width:120px">Ngày tháng</th><th>Việc cần làm</th><th>Khách hàng</th>${showCo ? "<th>Công ty</th>" : ""}<th style="width:150px">Trạng thái</th><th style="width:44px"></th></tr></thead>
+          <thead><tr><th style="width:118px">Ngày tháng</th><th>Việc cần làm</th><th style="width:26%">Khách hàng</th>${showCo ? `<th style="width:15%">Công ty</th>` : ""}<th style="width:150px">Trạng thái</th><th style="width:48px"></th></tr></thead>
           <tbody>${shown.map(r => `<tr class="${r.it.done ? "is-done" : ""}">
             <td class="num tk-d">${dmy(r.t.date)}</td>
-            <td class="tk-t"><span translate="no" class="it-t ${r.it.done ? "got" : ""}">${r.it.text ? esc(r.it.text) : L("Việc")}</span></td>
+            <td class="tk-t"><span translate="no" class="it-t ${r.it.done ? "got" : ""}">${r.it.text ? esc(r.it.text) : L("Việc")}</span>${r.t.shared ? ownTag(r.t) : ""}</td>
             <td class="tk-c">${r.it.clientId ? `<button type="button" class="it-cl" data-openclient="${r.it.clientId}" title="Mở hồ sơ khách">${esc((cl(r.it.clientId) || {}).name || "Khách")}</button>` : muted("—")}</td>
             ${showCo ? `<td class="tk-cc"><span class="tk-co"><i class="swatch" style="background:${coColor(r.t.companyId)}"></i>${esc(coName(r.t.companyId))}</span></td>` : ""}
-            <td class="tk-s">${statusSel(r.t.id, r.it.id, r.it.done)}</td>
+            <td class="tk-s">${statusSel(r.t.id, r.it.id, r.it.done, !!r.t.shared)}</td>
             <td class="tk-go"><button type="button" class="btn icon ghost" data-task="${r.t.id}" title="Chi tiết ca" aria-label="Chi tiết ca">↗</button></td>
           </tr>`).join("")}</tbody></table></div>${pagerHTML(page, pages, rows.length, PER)}`
         : `<div class="empty"><b>Chưa có việc nào ở đây.</b>Thêm ca làm ở tab Lịch, mục Lịch làm việc.</div>`}
@@ -3504,21 +3652,32 @@ function renderTasks() {
 }
 
 // Thanh số trang: tối đa 5 số quanh trang đang xem; « ‹ chỉ hiện khi không ở trang đầu, › » khi không ở trang cuối.
-function pagerHTML(page, pages, total, per) {
+function pagerHTML(page, pages, total, per, kind) {
   if (pages <= 1) return "";
-  const from = Math.max(1, Math.min(page - 2, pages - 4)), to = Math.min(pages, from + 4);
-  const btn = (n, label, aria, cur) => `<button type="button" data-taskpage="${n}" aria-label="${aria}" ${cur ? 'aria-current="page"' : ""}>${label}</button>`;
+  const from = Math.max(1, Math.min(page - 2, pages - 4)), to = Math.min(pages, from + 4), attr = kind === "gloss" ? "data-glosspage" : "data-taskpage";
+  const btn = (n, label, aria, cur) => `<button type="button" ${attr}="${n}" aria-label="${aria}" ${cur ? 'aria-current="page"' : ""}>${label}</button>`;
   const nums = [];
   for (let n = from; n <= to; n++) nums.push(btn(n, n, `Trang ${n}`, n === page));
   return `<nav class="pager" aria-label="Phân trang">
     ${page > 1 ? btn(1, "«", "Trang đầu") + btn(page - 1, "‹", "Trang trước") : ""}
     ${nums.join("")}
     ${page < pages ? btn(page + 1, "›", "Trang sau") + btn(pages, "»", "Trang cuối") : ""}
-    <span class="pager-info num">${(page - 1) * per + 1}–${Math.min(page * per, total)} / ${total} việc</span>
+    <span class="pager-info num">${(page - 1) * per + 1}–${Math.min(page * per, total)} / ${total} ${kind === "gloss" ? "mục" : "việc"}</span>
   </nav>`;
 }
 
 /* ============================== tính lương ============================== */
+// Cộng tháng, giữ ngày; tháng sau không có ngày đó (31/1 + 1 tháng) thì lấy ngày cuối tháng.
+function addMonthsClamp(d, n) {
+  const y = d.getFullYear(), m = d.getMonth() + n, last = new Date(y, m + 1, 0).getDate();
+  return new Date(y, m, Math.min(d.getDate(), last));
+}
+// Một kỳ dài bao lâu, tính từ ngày bắt đầu: dùng cho nút ‹ › và Kỳ hiện tại.
+function payStep(a, dir) {
+  const p = state.pay, n = Math.max(1, p.n);
+  if (p.kind === "week") return addDays(a, dir * 7 * n);
+  return addMonthsClamp(a, dir * (p.kind === "year" ? 12 : 1) * n);
+}
 function payRange() {
   const p = state.pay, a = parseISO(p.anchor);
   if (p.kind === "custom") {
@@ -3527,16 +3686,17 @@ function payRange() {
     return { from: f, to: t, label: `${shortVN(f)} – ${shortVN(t)}/${t.getFullYear()}` };
   }
   if (p.kind === "week") {
-    const f = startOfWeek(a), t = addDays(f, 7 * Math.max(1, p.n) - 1);
+    const f = a, t = addDays(f, 7 * Math.max(1, p.n) - 1);   // bắt đầu đúng ngày chọn, không lùi về thứ Hai
     return { from: f, to: t, label: `${p.n} tuần · ${shortVN(f)} – ${shortVN(t)}/${t.getFullYear()}` };
   }
   if (p.kind === "month") {
-    const f = new Date(a.getFullYear(), a.getMonth(), 1);
-    const t = new Date(a.getFullYear(), a.getMonth() + Math.max(1, p.n), 0);
-    return { from: f, to: t, label: p.n > 1 ? `${p.n} tháng · ${shortVN(f)} – ${shortVN(t)}/${t.getFullYear()}` : `Tháng ${f.getMonth() + 1}/${f.getFullYear()}` };
+    const f = a, t = addDays(addMonthsClamp(a, Math.max(1, p.n)), -1);   // bắt đầu đúng ngày chọn
+    return { from: f, to: t, label: p.n === 1 && f.getDate() === 1 ? `Tháng ${f.getMonth() + 1}/${f.getFullYear()}`
+      : `${p.n} tháng · ${shortVN(f)} – ${shortVN(t)}/${t.getFullYear()}` };
   }
-  const f = new Date(a.getFullYear(), 0, 1), t = new Date(a.getFullYear() + Math.max(1, p.n) - 1, 11, 31);
-  return { from: f, to: t, label: p.n > 1 ? `${f.getFullYear()} – ${t.getFullYear()}` : `Năm ${f.getFullYear()}` };
+  const f = a, t = addDays(addMonthsClamp(a, 12 * Math.max(1, p.n)), -1);
+  return { from: f, to: t, label: f.getMonth() === 0 && f.getDate() === 1 ? (p.n > 1 ? `${f.getFullYear()} – ${t.getFullYear()}` : `Năm ${f.getFullYear()}`)
+    : `${shortVN(f)}/${f.getFullYear()} – ${shortVN(t)}/${t.getFullYear()}` };
 }
 // Số tháng của kỳ, tính theo tỉ lệ ngày: trọn tháng 8 được 1, nửa tháng được 0,5.
 function monthsBetween(f, t) {
@@ -3740,10 +3900,17 @@ function payOf(t) {
   };
 }
 
+// Người làm của tài khoản khác, có ca ở công ty đã bật chia sẻ kỳ lương.
+function payShared() {
+  const ids = new Set(SH().tasks.filter(t => t.shared.pay).flatMap(t => taskCrew(t).map(w => w.personId)).filter(Boolean));
+  return SH().people.filter(x => ids.has(x.id));
+}
 function payrollRows() {
   const { from, to } = payRange();
   const f = iso(from), t = iso(to);
-  const sel = state.tasks.filter(x => x.date >= f && x.date <= t && visible(x)
+  // chọn người đã chia sẻ kỳ lương: tính trên các ca họ chia sẻ; còn lại chỉ tính việc của mình
+  const src = isShared(state.pay.person) ? SH().tasks.filter(x => x.shared.pay) : state.tasks;
+  const sel = src.filter(x => x.date >= f && x.date <= t && visible(x)
     && (!state.pay.company || canonCo(x.companyId) === canonCo(state.pay.company))
     && (!state.pay.person || worksHere(x, state.pay.person)));
   // Mỗi người làm trong ca được tính giờ và tiền riêng của người đó.
@@ -3861,7 +4028,12 @@ function otNightText(tasks) {
     .join("\n");
 }
 function renderPay() {
-  const p = state.pay, { label } = payRange();
+  const p = state.pay;
+  // bộ lọc nhớ người làm hay công ty không còn trong danh sách (đã xoá, của tài khoản khác): về Tất cả
+  const shReady = !!auth.shared || auth.mode !== "app";
+  if (p.person && !pe(p.person) && (!p.person.startsWith("sh:") || shReady)) p.person = "";
+  if (p.company && !co(p.company) && (!p.company.startsWith("sh:") || shReady)) p.company = "";
+  const { label } = payRange();
   const { rows, from, to, count, tasks } = payrollRows();
   const totH = rows.reduce((s, r) => s + r.h, 0);
   const totOt = rows.reduce((s, r) => s + r.otH, 0);
@@ -3893,7 +4065,8 @@ function renderPay() {
         </div>
         <div class="f" style="min-width:150px"><label>Nhân viên</label>
           <select id="pPerson"><option value="">Tất cả</option>
-            ${state.people.map(x => `<option value="${x.id}" ${p.person === x.id ? "selected" : ""}>${esc(x.name)}</option>`).join("")}</select></div>
+            ${state.people.map(x => `<option value="${x.id}" ${p.person === x.id ? "selected" : ""}>${esc(x.name)}</option>`).join("")}
+            ${payShared().length ? `<optgroup label="Chia sẻ kỳ lương">${payShared().map(x => `<option value="${x.id}" ${p.person === x.id ? "selected" : ""}>${esc(x.name + " · chia sẻ")}</option>`).join("")}</optgroup>` : ""}</select></div>
         <div class="f" style="min-width:160px"><label>Công ty</label>
           <select id="pCompany"><option value="">Tất cả</option>
             ${uniqCos(p.company).map(c => `<option value="${c.id}" ${p.company === c.id ? "selected" : ""}>${esc(c.name)}</option>`).join("")}</select></div>
@@ -4069,7 +4242,7 @@ function loanSchema() {
     valueColors,
     colBold: Object.assign({}, d.colBold || {}),
     // Người trong form hồ sơ: nhãn và các giá trị Áp dụng cho thuộc về người đó.
-    slots: (Array.isArray(d.slots) ? d.slots : hasData || state.loanCases.length ? DEFAULT_SLOTS : [])
+    slots: (Array.isArray(d.slots) ? d.slots : hasData || allCases().length ? DEFAULT_SLOTS : [])
       .map(x => ({ id: x.id, label: x.label || "", who: Array.isArray(x.who) ? x.who.slice() : [] })),
   };
 }
@@ -4337,7 +4510,7 @@ function loanChecklist(c) {
 }
 
 /* ---- khung chung ---- */
-const curCase = () => state.loanCases.find(x => x.id === state.loanOpen);
+const curCase = () => allCases().find(x => x.id === state.loanOpen);
 function saveCase(c) {
   put("loanCases", c, true);
   // khách trên lịch tạo ra từ hồ sơ này thì đổi tên theo người vay
@@ -4349,13 +4522,14 @@ function saveCase(c) {
 // hồ sơ chưa gắn khách trên lịch có mã "case:…", sau đó là khách chỉ có trên lịch.
 function clientChoices() {
   const out = [], seen = new Set();
-  state.loanCases.slice().sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || "")).forEach(k => {
+  const lbl = (x, name) => name + (x.shared ? " · của " + x.shared.name : "");
+  allCases().slice().sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || "")).forEach(k => {
     if (!loanPeople(k).length) return;   // hồ sơ chưa nhập tên thì chưa có gì để chọn
     const cid = caseClientId(k), x = cid && cl(cid);
-    if (x) { if (seen.has(x.id)) return; seen.add(x.id); out.push({ id: x.id, name: x.name }); }
-    else out.push({ id: "case:" + k.id, name: caseName(k) });
+    if (x) { if (seen.has(x.id)) return; seen.add(x.id); out.push({ id: x.id, name: lbl(x, x.name) }); }
+    else if (!k.shared) out.push({ id: "case:" + k.id, name: caseName(k) });
   });
-  state.clients.forEach(c => { if (!seen.has(c.id)) { seen.add(c.id); out.push({ id: c.id, name: c.name }); } });
+  state.clients.concat(SH().clients).forEach(c => { if (!seen.has(c.id)) { seen.add(c.id); out.push({ id: c.id, name: lbl(c, c.name) }); } });
   return out;
 }
 const clientOptsHTML = (sel, newLabel) => `<option value="">— chưa gán khách —</option>` +
@@ -4382,7 +4556,7 @@ function newClient(name, companyId) {
 }
 function refreshLoanOut() {
   const out = $("#loanOut"), c = curCase();
-  if (out && c) out.innerHTML = loanOutHTML(c);
+  if (out && c) out.innerHTML = asOwner(c, () => loanOutHTML(c));
 }
 function renderLoan() {
   migrateLoan();
@@ -4407,8 +4581,9 @@ function renderLoan() {
         : `<button class="btn primary" data-slotadd>+ Thêm người</button>`}
     </div>` + (state.loanTab === "rules" ? rulesHTML() : fieldsHTML());
   } else if (page === "master") {
-    html = `<div class="loan-bar"><span class="lbl">${state.loanCases.length} hồ sơ</span><div class="spacer"></div>
-      <input id="mdQ" class="mini" style="width:min(280px,100%)" placeholder="Tìm trong dữ liệu tổng" aria-label="Tìm trong dữ liệu tổng" value="${esc(state.mdQ || "")}">
+    html = `<div class="loan-bar"><span class="lbl">${allCases().length} hồ sơ</span><div class="spacer"></div>
+      <select id="mdSort" class="mini md-sort" style="width:auto;flex:0 0 auto" aria-label="Sắp xếp">${MD_SORTS.map(([k, n]) => `<option value="${k}" ${mdSort() === k ? "selected" : ""}>${n}</option>`).join("")}</select>
+      <input id="mdQ" class="mini md-q" placeholder="Tìm trong dữ liệu tổng" aria-label="Tìm trong dữ liệu tổng" value="${esc(state.mdQ || "")}">
       <button class="btn primary" id="loanNew">+ Hồ sơ mới</button></div><div id="mdTable">${casesHTML()}</div>`;
   } else {
     // Trang Client's Profile: chọn khách ở đầu trang, bên dưới là form, việc từ lịch và chứng từ.
@@ -4416,33 +4591,66 @@ function renderLoan() {
       ${casePickHTML(c)}
       <button class="btn" id="loanNew">+ Hồ sơ mới</button>
       <div class="spacer"></div>
-      ${c ? `<button class="btn" data-lt="fields">Sửa form nhập liệu</button>
+      ${c && c.shared ? `<span class="ro-note">${ownTag(c)}<span class="lbl">Chỉ xem</span></span><button class="btn" id="loanCopy">Sao chép danh sách chứng từ</button>`
+        : c ? `<button class="btn" data-lt="fields">Sửa form nhập liệu</button>
         <button class="btn" id="loanCopy">Sao chép danh sách chứng từ</button>
         <button class="btn danger" data-loan-del="${c.id}">Xoá hồ sơ</button>` : ""}
-    </div>` + (c ? `${caseFormHTML(c)}<div id="loanOut" class="loan-out">${loanOutHTML(c)}</div>${caseTasksHTML(c)}`
+    </div>` + (c ? asOwner(c, () => `${caseFormHTML(c)}<div id="loanOut" class="loan-out">${loanOutHTML(c)}</div>${caseTasksHTML(c)}`)
       : `<div class="card"><div class="empty"><b>Chưa chọn khách hàng nào.</b>${state.loanCases.length
         ? `Chọn khách ở ô trên, hoặc mở Dữ liệu tổng để xem cả danh sách.<div style="margin-top:12px"><button class="btn" data-tab-go="master">Mở Dữ liệu tổng</button></div>`
         : `Bấm "+ Hồ sơ mới" để tạo hồ sơ khách đầu tiên.`}</div></div>`);
   }
   body.innerHTML = html;
+  // hồ sơ của người khác: khoá mọi ô nhập, chỉ còn xem và mở link
+  if (c && c.shared) {
+    body.querySelectorAll("input, textarea, select:not(#casePick)").forEach(e => { e.disabled = true; e.title = "Chỉ xem"; });
+    body.querySelectorAll("button:not(#loanNew):not(#loanCopy):not([data-stageall]), .ms-box .ms-x, .chip-x").forEach(e => { e.hidden = true; });
+    body.querySelectorAll(".ms-box").forEach(e => { e.style.pointerEvents = "none"; });
+  }
 }
 const caseName = k => { const p = loanPeople(k); return p.length ? p.map(x => x.name).join(" & ") : "(chưa nhập tên)"; };
 // Ô chọn khách ở đầu trang Client's Profile, mới nhất lên trước như Master Data.
 function casePickHTML(c) {
-  const rows = state.loanCases.slice().sort((x, y) => (y.createdAt || "").localeCompare(x.createdAt || ""));
+  const rows = sortCases(allCases());
   if (!rows.length) return "";
   return `<select id="casePick" data-search class="mini" style="width:auto;min-width:240px;max-width:100%" aria-label="Chọn khách hàng">
     ${c ? "" : `<option value="" selected>— chọn khách hàng —</option>`}
-    ${rows.map(k => `<option value="${k.id}" ${c && k.id === c.id ? "selected" : ""}>${esc(caseName(k))}</option>`).join("")}
+    ${rows.map(k => `<option value="${k.id}" ${c && k.id === c.id ? "selected" : ""}>${esc(caseName(k) + (k.shared ? " · của " + k.shared.name : ""))}</option>`).join("")}
   </select>`;
 }
 const importNote = text => `<div class="note-box" style="display:flex;flex-direction:column;gap:10px;align-items:flex-start">
   <span>${text}</span><button class="btn primary" id="loanImport">Nạp mẫu từ bảng tính</button></div>`;
 
 /* ---- thẻ Hồ sơ ---- */
+// Sắp xếp Master Data: chọn ở ô Sắp xếp hoặc bấm tiêu đề cột; nhớ trên máy này.
+const MD_SORTS = [["new", "Mới tạo trước"], ["old", "Cũ trước"], ["az", "Tên khách A→Z"], ["za", "Tên khách Z→A"]];
+const mdSort = () => { try { return localStorage.getItem("cakip.mdSort") || "new"; } catch (e) { return "new"; } };
+function setMdSort(v) { try { localStorage.setItem("cakip.mdSort", v); } catch (e) { } renderLoan(); }
+const sortArrow = col => { const v = mdSort(); return col === "name" ? (v === "az" ? `<span class="sort-ar">▲</span>` : v === "za" ? `<span class="sort-ar">▼</span>` : "")
+  : (v === "new" ? `<span class="sort-ar">▼</span>` : v === "old" ? `<span class="sort-ar">▲</span>` : ""); };
+const caseSortName = c => { const p = loanPeople(c); return (p.length ? p[0].name : "").trim(); };
+function sortCases(list) {
+  const v = mdSort(), byDate = (a, b) => (b.createdAt || "").localeCompare(a.createdAt || "");
+  const coll = new Intl.Collator("vi", { sensitivity: "base", numeric: true });
+  const out = list.slice();
+  if (v === "old") out.sort((a, b) => -byDate(a, b));
+  else if (v === "az" || v === "za") out.sort((a, b) => {
+    const x = caseSortName(a), y = caseSortName(b);
+    if (!x !== !y) return x ? -1 : 1;   // hồ sơ chưa nhập tên luôn nằm cuối
+    return (v === "az" ? 1 : -1) * coll.compare(x, y) || byDate(a, b);
+  });
+  else out.sort(byDate);
+  return out;
+}
+document.addEventListener("change", e => { if (e.target.id === "mdSort") setMdSort(e.target.value); });
+document.addEventListener("click", e => {
+  const th = e.target.closest && e.target.closest("th[data-mdsort]"); if (!th) return;
+  const v = mdSort();
+  setMdSort(th.dataset.mdsort === "name" ? (v === "az" ? "za" : "az") : (v === "new" ? "old" : "new"));
+});
 function casesHTML() {
   const sc = loanSchema(), cols = sc.fields.filter(f => f.scope !== "person");
-  const all = state.loanCases.slice().sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
+  const all = sortCases(allCases());
   if (!all.length) return `<div class="card"><div class="empty"><b>Chưa có hồ sơ nào.</b>
     Bấm "+ Hồ sơ mới" rồi nhập thông tin, danh sách chứng từ tự hiện theo rules.</div></div>`;
   // Ô tìm: khớp tên người, thông tin chung và thông tin riêng của từng người (tìm được cả bằng chữ tiếng Anh đang hiện)
@@ -4453,25 +4661,25 @@ function casesHTML() {
   if (!rows.length) return `<div class="card"><div class="empty"><b>Không tìm thấy hồ sơ nào.</b>Thử từ khoá khác.</div></div>`;
   // Bảng master data: mỗi cột thông tin chung của hồ sơ là một cột riêng, như bảng tính.
   return `<div class="card"><div class="card-b"><div class="tbl-wrap"><table class="md-table">
-    <thead><tr><th>#</th><th>Khách hàng</th>${cols.map(f => `<th>${esc(f.label)}</th>`).join("")}
-      <th class="r">Chứng từ</th><th class="r">Công việc</th><th>Ngày tạo</th><th>Tuỳ chọn</th></tr></thead>
+    <thead><tr><th>#</th><th data-mdsort="name" title="Bấm để sắp xếp theo tên">Khách hàng${sortArrow("name")}</th>${cols.map(f => `<th>${esc(f.label)}</th>`).join("")}
+      <th class="r">Chứng từ</th><th class="r">Công việc</th><th data-mdsort="date" title="Bấm để sắp xếp theo ngày tạo">Ngày tạo${sortArrow("date")}</th><th>Tuỳ chọn</th></tr></thead>
     <tbody>${rows.map((c, i) => {
     const people = loanPeople(c, sc);
-    const docs = loanChecklist(c).flatMap(x => x.groups.flatMap(g => g.docs));
+    const docs = asOwner(c, () => loanChecklist(c).flatMap(x => x.groups.flatMap(g => g.docs)));
     const got = docs.filter(d => (c.received || {})[d.key]).length;
     const jobs = caseJobs(c), cid = caseClientId(c);
     const d = c.createdAt ? new Date(c.createdAt) : null;
     return `<tr class="case-row" data-case-open="${c.id}">
-        <td class="num">${i + 1}</td>
-        <td><b class="md-link">${esc(people.length ? people[0].name : "(chưa nhập tên)")}</b>
+        <td class="num md-num">${i + 1}</td>
+        <td class="md-name"><b class="md-link">${esc(people.length ? people[0].name : "(chưa nhập tên)")}</b>${c.shared ? ownTag(c) : ""}
           ${people.length > 1 ? `<div style="font-size:12px;color:var(--muted)">${people.slice(1).map(x => `${esc(x.label)}: ${esc(x.name)}`).join(" · ")}</div>` : ""}
 </td>
-        ${cols.map(f => `<td>${esc(f.type === "bool" ? yesNo((c.values || {})[f.id]) : valueText(f, (c.values || {})[f.id]) || "—")}</td>`).join("")}
-        <td class="r num">${docs.length ? `${got}/${docs.length}` : "—"}</td>
-        <td class="r num">${jobs.length ? `${jobs.filter(j => j.x.done).length}/${jobs.length}` : "—"}</td>
-        <td class="num">${d ? `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}` : "—"}</td>
-        <td><div style="display:flex;gap:6px"><button class="btn" data-loan-clone="${c.id}" title="Nhân bản hồ sơ này">Nhân bản</button>
-          <button class="btn danger" data-loan-del="${c.id}">Xoá</button></div></td>
+        ${cols.map(f => `<td class="md-f" data-label="${esc(L(f.label))}">${esc(f.type === "bool" ? yesNo((c.values || {})[f.id]) : valueText(f, (c.values || {})[f.id]) || "—")}</td>`).join("")}
+        <td class="r num md-f" data-label="${esc(L("Chứng từ"))}">${docs.length ? `${got}/${docs.length}` : "—"}</td>
+        <td class="r num md-f" data-label="${esc(L("Công việc"))}">${jobs.length ? `${jobs.filter(j => j.x.done).length}/${jobs.length}` : "—"}</td>
+        <td class="num md-f" data-label="${esc(L("Ngày tạo"))}">${d ? `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}` : "—"}</td>
+        <td class="md-opt">${c.shared ? `<span class="lbl">Chỉ xem</span>` : `<div style="display:flex;gap:6px"><button class="btn" data-loan-clone="${c.id}" title="Nhân bản hồ sơ này">Nhân bản</button>
+          <button class="btn danger" data-loan-del="${c.id}">Xoá</button></div>`}</td>
       </tr>`;
   }).join("")}</tbody></table></div></div></div>`;
 }
@@ -4561,13 +4769,13 @@ function openClientProfile(cid) {
 // Hồ sơ vay của một khách trên lịch (nếu đã có).
 function clientCase(cid) {
   const c = cl(cid);
-  return (c && c.caseId && state.loanCases.find(k => k.id === c.caseId)) || state.loanCases.find(k => caseClientId(k) === cid) || null;
+  return (c && c.caseId && allCases().find(k => k.id === c.caseId)) || allCases().find(k => caseClientId(k) === cid) || null;
 }
 // Mọi việc trên lịch có gắn khách này, mới nhất trước.
 function caseJobs(c) {
   const cid = caseClientId(c);
   if (!cid) return [];
-  return state.tasks.filter(t => taskClients(t).includes(cid))
+  return allTasks().filter(t => (!t.shared || t.shared.list) && taskClients(t).includes(cid))
     .flatMap(t => taskItems(t).filter(x => x.clientId === cid).map(x => ({ t, x })))
     .sort((a, b) => b.t.date.localeCompare(a.t.date) || toMin(b.t.start) - toMin(a.t.start));
 }
@@ -4575,14 +4783,14 @@ const dmy = d => { const x = parseISO(d); return `${pad(x.getDate())}/${pad(x.ge
 // Thẻ Tasks trong hồ sơ: việc thêm ở lịch tự hiện lại đây, không phải nhập lại.
 function caseTasksHTML(c) {
   const cid = caseClientId(c), jobs = caseJobs(c), done = jobs.filter(j => j.x.done).length;
-  const hours = [...new Set(jobs.map(j => j.t.id))].reduce((a, id) => a + dur(state.tasks.find(t => t.id === id)), 0);
+  const hours = [...new Set(jobs.map(j => j.t.id))].reduce((a, id) => a + dur(allTasks().find(t => t.id === id)), 0);
   return `<div class="card">
     <div class="card-h"><h2>Công việc từ lịch</h2>
       ${jobs.length ? `<span class="lbl">${done}/${jobs.length} xong · ${fmtH(hours)}</span>` : ""}
       <div class="spacer"></div>
       <select id="caseClient" data-search class="mini" style="width:auto;min-width:200px" aria-label="Khách hàng trên lịch">
         <option value="">— chưa gắn khách trên lịch —</option>
-        ${state.clients.map(x => `<option value="${x.id}" ${x.id === cid ? "selected" : ""}>${esc(x.name)}</option>`).join("")}
+        ${(c.shared ? SH().clients.filter(x => x.id === cid) : state.clients).map(x => `<option value="${x.id}" ${x.id === cid ? "selected" : ""}>${esc(x.name)}</option>`).join("")}
         <option value="__new">+ Tạo khách hàng theo tên người vay</option>
       </select></div>
     <div class="card-b">
@@ -4623,7 +4831,7 @@ function slotBlocksHTML(c, sc0) {
 }
 // Trạng thái từng việc, dropdown Pending / Done như brief trang 9 và 11.
 function setItemDone(tid, iid, done) {
-  const t0 = state.tasks.find(x => x.id === tid);
+  const t0 = allTasks().find(x => x.id === tid);
   if (!t0) return;
   const crew = taskCrew(t0).map(w => Object.assign({}, w, {
     items: w.items.map(x => (x.id === iid ? Object.assign({}, x, { done }) : x)),
@@ -4632,8 +4840,8 @@ function setItemDone(tid, iid, done) {
   put("tasks", Object.assign({}, t0, { crew, items: (crew[0] || {}).items || [], done: all.every(x => x.done) }));
   if ($("#modalHost").children.length) openPeek(...(state.peek || []));
 }
-function statusSel(tid, iid, done) {
-  return `<select class="st-sel ${done ? "done" : ""}" data-statusitem="${tid}|${iid}" aria-label="Trạng thái việc">
+function statusSel(tid, iid, done, ro) {
+  return `<select class="st-sel ${done ? "done" : ""}" data-statusitem="${tid}|${iid}" aria-label="Trạng thái việc" ${ro ? `disabled title="Chỉ xem: việc của người khác"` : ""}>
     <option value="0" ${done ? "" : "selected"}>Chưa xong</option>
     <option value="1" ${done ? "selected" : ""}>Đã xong</option></select>`;
 }
@@ -4643,6 +4851,85 @@ function docHTML(r) {
   if (r.link && /^https?:\/\//i.test(r.link)) t = `<a href="${esc(r.link)}" target="_blank" rel="noopener noreferrer">${t}</a>`;
   return t;
 }
+/* ---- link OneDrive của từng chứng từ trong hồ sơ (brief trang 38, 39) ----
+   Link là của hồ sơ đang mở (c.links[mã chứng từ]): mỗi khách một file nên mỗi khách một link; khách khác cùng
+   chứng từ thì gắn link của khách đó. Link mẫu chung vẫn ở cột link của Rules. Gắn link: bôi đen tên chứng từ rồi
+   bấm Link, hoặc bấm nút 🔗 cuối dòng. Bản xem công khai không hiện link (giấy tờ cá nhân của khách). */
+const OD_GO = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg>';
+const OD_LINK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>';
+const odLinkOf = (c, key) => { const u = ((c && c.links) || {})[key]; return typeof u === "string" && /^https:\/\//i.test(u) ? u : ""; };
+const odDocEl = n => { const e = n && (n.nodeType === 1 ? n : n.parentElement); return e && e.closest ? e.closest("[data-docname]") : null; };
+const odRow = key => { const n = [...document.querySelectorAll("[data-docname]")].find(x => x.dataset.docname === key); return n ? n.closest("li") : null; };
+function odClose(which) {
+  if (which !== "pop") { const b = $("#odBar"); if (b) b.remove(); }
+  if (which !== "bar") { const p = $("#odPop"); if (p) p.remove(); }
+}
+// Bôi đen tên một chứng từ: hiện nút Link nổi ngay trên chỗ bôi đen.
+function odSelBar() {
+  const sel = getSelection(), old = $("#odBar");
+  const name = sel && sel.rangeCount && !sel.isCollapsed && String(sel).trim() ? odDocEl(sel.anchorNode) : null;
+  if (!name || name !== odDocEl(sel.focusNode) || state.view !== "loan" || pubMode() || !curCase()) { if (old) old.remove(); return; }
+  if (old && old.dataset.key === name.dataset.docname) return;
+  if (old) old.remove();
+  const li = name.closest("li"), r = sel.getRangeAt(0).getBoundingClientRect(), box = li.getBoundingClientRect();
+  const bar = document.createElement("div");
+  bar.id = "odBar"; bar.className = "od-bar"; bar.dataset.key = name.dataset.docname;
+  bar.innerHTML = `<button type="button" data-odopen="${esc(name.dataset.docname)}">${OD_LINK}<span>Link</span></button>`;
+  li.appendChild(bar);
+  bar.style.left = Math.max(0, Math.min(r.left - box.left + r.width / 2 - bar.offsetWidth / 2, box.width - bar.offsetWidth)) + "px";
+}
+// Ô dán link, mở ngay dưới dòng chứng từ.
+function odOpen(key) {
+  const c = curCase(), li = odRow(key);
+  if (!c || !li || pubMode()) return;
+  odClose();
+  const u = odLinkOf(c, key), pop = document.createElement("div");
+  pop.id = "odPop"; pop.className = "od-pop"; pop.dataset.key = key;
+  pop.setAttribute("role", "dialog"); pop.setAttribute("aria-label", "Link OneDrive của chứng từ này");
+  pop.innerHTML = `<label class="lbl" for="odUrl">Link OneDrive của chứng từ này</label>
+    <input id="odUrl" type="url" inputmode="url" autocomplete="off" spellcheck="false" placeholder="Dán link OneDrive (https://…)" value="${esc(u)}">
+    <div class="od-msg" id="odMsg" role="alert"></div>
+    <div class="od-row"><small>${esc("Chỉ hồ sơ của " + (loanPeople(c).length ? caseName(c) : (cl(c.clientId) || {}).name || caseName(c)) + " có link này")}</small><div class="spacer" style="flex:1"></div>
+      ${u ? `<button type="button" class="btn" data-odsave="del">Bỏ link</button>` : ""}<button type="button" class="btn primary" data-odsave="ok">Lưu</button></div>`;
+  li.appendChild(pop);
+  const inp = $("#odUrl"); inp.focus(); inp.select();
+}
+function odSave(del) {
+  const pop = $("#odPop"), c = curCase(); if (!pop || !c) return;
+  const key = pop.dataset.key, v = del ? "" : $("#odUrl").value.trim();
+  if (v && !/^https:\/\/\S+$/i.test(v)) { $("#odMsg").textContent = "Link phải bắt đầu bằng https://"; return $("#odUrl").focus(); }
+  const k = cloneCase(c);
+  k.links = Object.assign({}, k.links);
+  if (v) k.links[key] = v; else delete k.links[key];
+  if (!Object.keys(k.links).length) delete k.links;
+  odClose();
+  saveCase(k);
+}
+document.addEventListener("mouseup", () => setTimeout(odSelBar, 0));
+document.addEventListener("keyup", e => { if (e.shiftKey || e.key === "Shift") setTimeout(odSelBar, 0); });
+document.addEventListener("touchend", () => setTimeout(odSelBar, 250));
+document.addEventListener("selectionchange", () => {
+  const s = getSelection(); if (s && !s.isCollapsed) return;
+  setTimeout(() => { const t = getSelection(); if (!t || t.isCollapsed) odClose("bar"); }, 200);
+});
+document.addEventListener("click", e => {
+  const t = e.target; if (!t.closest) return;
+  // bôi đen chữ trong dòng chứng từ thì không tính là bấm vào ô tick
+  if (t.closest(".docs .doc") && !t.matches("input")) {
+    const s = getSelection();
+    if (s && String(s).trim() && odDocEl(s.anchorNode)) { e.preventDefault(); return; }
+  }
+  const a = t.closest("[data-odlink],[data-odopen]");
+  if (a) { e.preventDefault(); return odOpen(a.dataset.odlink || a.dataset.odopen); }
+  const sv = t.closest("[data-odsave]");
+  if (sv) return odSave(sv.dataset.odsave === "del");
+  if ($("#odPop") && !t.closest("#odPop")) odClose("pop");
+}, true);
+document.addEventListener("keydown", e => {
+  if (!$("#odPop") || !e.target.closest || !e.target.closest("#odPop")) return;
+  if (e.key === "Enter") { e.preventDefault(); odSave(false); }
+  if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); odClose(); }
+}, true);
 function loanOutHTML(c) {
   if (!state.loanRules.length) return `<div class="card"><div class="empty"><b>Chưa có rule nào.</b>
     Vào thẻ Rules để tự tạo rule, hoặc nạp bộ mẫu từ bảng tính của bạn.
@@ -4678,9 +4965,10 @@ function loanOutHTML(c) {
         <div class="stage-bar"><i style="width:${n ? k / n * 100 : 0}%"></i></div>
         ${s.groups.map(g => `<div class="sg">
           <div class="sg-h"><b>${esc(g.group.title)}</b>${g.group.sub ? `<small>${esc(g.group.sub)}</small>` : ""}</div>
-          <ul class="docs">${g.docs.map(d => `<li><label class="doc ${got[d.key] ? "got" : ""}">
-            <input type="checkbox" data-doc="${esc(d.key)}" ${got[d.key] ? "checked" : ""}><span>${docHTML(d.rule)}</span>
-          </label></li>`).join("")}</ul>
+          <ul class="docs">${g.docs.map(d => { const u = pubMode() ? "" : odLinkOf(c, d.key), ro = pubMode() || !!c.shared; return `<li><div class="doc-row"><label class="doc ${got[d.key] ? "got" : ""}">
+            <input type="checkbox" data-doc="${esc(d.key)}" ${got[d.key] ? "checked" : ""}><span data-docname="${esc(d.key)}">${docHTML(d.rule)}</span>
+          </label>${u ? `<a class="od-btn go" href="${esc(u)}" target="_blank" rel="noopener noreferrer" title="Mở trên OneDrive" aria-label="Mở trên OneDrive">${OD_GO}</a>` : ""}${ro ? ""
+            : `<button type="button" class="od-btn add" data-odlink="${esc(d.key)}" title="${u ? "Sửa link OneDrive" : "Gắn link OneDrive"}" aria-label="${u ? "Sửa link OneDrive" : "Gắn link OneDrive"}">${OD_LINK}</button>`}</div></li>`; }).join("")}</ul>
         </div>`).join("")}
       </div>
     </details>`;
@@ -4704,7 +4992,7 @@ function loanText(c) {
     s.groups.forEach(g => {
       // không dùng ngoặc vuông: tên nhóm đứng riêng một dòng, chứng từ gạch đầu dòng, đã nhận thì đánh ✓
       lines.push(L(g.group.title));
-      g.docs.forEach(d => lines.push(`${(c.received || {})[d.key] ? "✓" : "-"} ${L(d.rule.doc)}${d.rule.link ? " — " + d.rule.link : ""}`));
+      g.docs.forEach(d => { const u = odLinkOf(c, d.key) || d.rule.link; lines.push(`${(c.received || {})[d.key] ? "✓" : "-"} ${L(d.rule.doc)}${u ? " — " + u : ""}`); });
     });
   });
   return lines.join("\n");
@@ -5662,9 +5950,21 @@ function loanClick(e) {
   }
   if ((b = q("[data-loan-del]"))) {
     const id = b.dataset.loanDel, c = state.loanCases.find(x => x.id === id);
-    const who = c ? loanPeople(c).map(p => p.name).join(" & ") : "";
-    askConfirm("Xoá hồ sơ", `Xoá hồ sơ${who ? " của " + who : ""} cùng mọi dấu đã nhận chứng từ? Không lấy lại được.`, "Xoá hồ sơ")
-      .then(ok => { if (!ok) return; if (state.loanOpen === id) state.loanOpen = null; drop("loanCases", id); });
+    if (!c) return true;
+    askDeleteCase(c).then(mode => {
+      if (!mode) return;
+      if (state.loanOpen === id) state.loanOpen = null;
+      const cid = caseClientId(c);
+      drop("loanCases", id);
+      if (mode === "all" && cid && cl(cid)) {
+        // việc trong ca vẫn giữ (giờ làm, lương không đổi), chỉ bỏ tên khách
+        state.tasks.filter(t => taskClients(t).includes(cid)).forEach(t => {
+          const crew = taskCrew(t).map(w => Object.assign({}, w, { items: w.items.map(x => (x.clientId === cid ? Object.assign({}, x, { clientId: "" }) : x)) }));
+          put("tasks", Object.assign({}, t, { crew, items: (crew[0] || {}).items || [], clientId: t.clientId === cid ? "" : t.clientId || "" }), true);
+        });
+        drop("clients", cid);
+      }
+    });
     return true;
   }
   if ((b = q("[data-stageall]"))) {
@@ -5676,7 +5976,7 @@ function loanClick(e) {
   if ((b = q("[data-case-open]")) && !q("button")) { state.loanOpen = b.dataset.caseOpen; state.loanPage = "loan"; navRender(); $("#view-loan").scrollTop = 0; return true; }
   if ((b = q("#loanCopy"))) {
     const c = curCase(); if (!c) return true;
-    copyText(loanText(c)).then(ok => {
+    copyText(asOwner(c, () => loanText(c))).then(ok => {
       b.textContent = ok ? "Đã sao chép" : "Trình duyệt chặn sao chép";
       setTimeout(() => { b.textContent = "Sao chép danh sách chứng từ"; }, 1800);
     });
@@ -6033,7 +6333,7 @@ function loanChange(e) {
 document.addEventListener("input", e => {
   if (e.target.id === "ruleQ") { state.ruleQ = e.target.value; rerenderGrid(); }
   if (e.target.id === "glossQ") {
-    state.glossQ = e.target.value; renderGlossary();
+    state.glossQ = e.target.value; state.glossPage = 1; renderGlossary();
     const f = $("#glossQ"); if (f) { f.focus(); f.setSelectionRange(f.value.length, f.value.length); }
   }
   if (e.target.id === "mdQ") { state.mdQ = e.target.value; const t = $("#mdTable"); if (t) t.innerHTML = casesHTML(); }
@@ -6751,6 +7051,42 @@ function askConfirm(title, body, okLabel) {
   });
 }
 
+// Xoá hồ sơ (đã chốt với chị CF): xoá hồ sơ thì việc trong ca vẫn còn nhưng không còn khách;
+// xoá việc thì hồ sơ vẫn còn nhưng không còn việc đó. Hộp xác nhận nói rõ khách đang gắn với bao nhiêu việc.
+// Trả về "all" (xoá) hoặc null (giữ lại).
+function askDeleteCase(c) {
+  return new Promise(resolve => {
+    const cid = caseClientId(c), who = loanPeople(c).map(p => p.name).join(" & ") || (cl(cid) || {}).name || "";
+    const jobs = cid ? state.tasks.filter(t => taskClients(t).includes(cid)) : [];
+    const n = jobs.reduce((a, t) => a + taskItems(t).filter(x => x.clientId === cid).length, 0);
+    const days = [...new Set(jobs.map(t => t.date))].sort().map(d => dmy(d).slice(0, 5));
+    const host = document.createElement("div");
+    host.innerHTML = `<div class="scrim" data-ask>
+      <div class="modal" style="width:min(460px,100%)" role="alertdialog" aria-modal="true" aria-labelledby="dcTitle">
+        <div class="modal-h"><h2 id="dcTitle">${esc(who ? "Xoá hồ sơ " + who + "?" : "Xoá hồ sơ này?")}</h2></div>
+        <div class="modal-b" style="display:flex;flex-direction:column;gap:12px">
+          ${cid && cl(cid) ? `<p style="margin:0;font-size:13.5px;color:var(--ink-2)">${n
+            ? esc(`Khách này đang gắn với ${n} việc trong ${jobs.length} ca (${days.join(", ")}).`)
+            : "Khách này chưa có việc nào trên lịch."}</p>
+          ${n ? `<p style="margin:0;font-size:13.5px;color:var(--ink-2)">Các việc vẫn giữ nguyên (giờ làm, lương không đổi), chỉ không còn tên khách. Khách cũng không còn trong ô chọn khách.</p>` : ""}` : ""}
+          <p style="margin:0;font-size:12.5px;color:var(--muted)">Dấu đã nhận chứng từ và link OneDrive của hồ sơ cũng bị xoá, không lấy lại được.</p>
+        </div>
+        <div style="display:flex;gap:10px;padding:14px 22px;border-top:1px solid var(--line)">
+          <button type="button" data-no style="${ASKBTN}background:var(--surface);border-color:var(--line-2);color:var(--ink-2)">Giữ lại</button>
+          <button type="button" data-yes style="${ASKBTN}background:var(--ot-soft);border-color:var(--ot-line);color:var(--ot)">Xoá</button>
+        </div>
+      </div></div>`;
+    document.body.appendChild(host);
+    const done = v => { host.remove(); document.removeEventListener("keydown", onKey); resolve(v); };
+    function onKey(e) { if (e.key === "Escape") done(null); }
+    document.addEventListener("keydown", onKey);
+    host.querySelector("[data-no]").onclick = () => done(null);
+    host.querySelector("[data-yes]").onclick = () => done("all");
+    host.querySelector("[data-ask]").onclick = e => { if (e.target.hasAttribute("data-ask")) done(null); };
+    setTimeout(() => host.querySelector("[data-yes]").focus(), 30);
+  });
+}
+
 // Hộp nhập một dòng, dùng khi cần thêm nhanh một tên mà không rời hộp thoại đang mở.
 function askText(title, label, okLabel) {
   return new Promise(resolve => {
@@ -7049,12 +7385,20 @@ document.addEventListener("click", e => {
     }
     case "pPrev": case "pNext": {
       const dir = b.id === "pNext" ? 1 : -1, p = state.pay, a = parseISO(p.anchor);
-      if (p.kind === "week") p.anchor = iso(addDays(a, dir * 7 * Math.max(1, p.n)));
-      else if (p.kind === "month") p.anchor = iso(new Date(a.getFullYear(), a.getMonth() + dir * Math.max(1, p.n), 1));
-      else if (p.kind === "year") p.anchor = iso(new Date(a.getFullYear() + dir * Math.max(1, p.n), 0, 1));
+      if (p.kind !== "custom") p.anchor = iso(payStep(a, dir));
       savePrefs(); renderPay(); break;
     }
-    case "pNow": state.pay.anchor = iso(new Date()); savePrefs(); renderPay(); break;
+    case "pNow": {
+      // kỳ chứa hôm nay, giữ đúng nhịp tính từ ngày bắt đầu đã chọn
+      const p = state.pay, today = parseISO(iso(new Date()));
+      let a = parseISO(p.anchor);
+      if (p.kind === "custom") { a = today; }
+      else {
+        for (let i = 0; i < 2000 && a > today; i++) a = payStep(a, -1);
+        for (let i = 0; i < 2000 && payStep(a, 1) <= today; i++) a = payStep(a, 1);
+      }
+      p.anchor = iso(a); savePrefs(); renderPay(); break;
+    }
     case "pOtCopy": {
       const head = ["Ngày", "Giờ làm", "Người làm", "Công ty", "Loại", "Giờ nhân hệ số", "Phần trăm", "Tiền", "Giờ đêm", "Phụ cấp đêm"].map(L).join("\t");
       const txt = [head, otNightText(payrollRows().tasks)].join("\n");
@@ -7167,7 +7511,12 @@ document.addEventListener("click", e => {
     return;
   }
   if (e.target.closest("#gBack")) { state.glossEdit = null; renderGlossary(); return; }
-  if (e.target.closest("#glossSort")) { state.glossSort = state.glossSort === "za" ? "az" : "za"; renderGlossary(); return; }
+  if (e.target.closest("#glossSort")) { state.glossSort = state.glossSort === "za" ? "az" : "za"; state.glossPage = 1; renderGlossary(); return; }
+  const gm = e.target.closest("[data-glossmode]");
+  if (gm) { try { localStorage.setItem("cakip.glossMode", gm.dataset.glossmode); } catch (err) { } state.glossPage = 1; renderGlossary();
+    const f = $("#glossQ"); if (f && f.value) f.focus(); return; }
+  const gp = e.target.closest("[data-glosspage]");
+  if (gp) { state.glossPage = Number(gp.dataset.glosspage); renderGlossary(); const top = $("#glossBody"); if (top) top.scrollIntoView({ block: "start" }); return; }
   if (e.target.closest("#gCancel")) {
     const g = state.glossary.find(x => x.id === state.glossEdit);
     if (g && !(g.term || "").trim() && !(g.body || "").trim()) drop("glossary", g.id);
@@ -7661,7 +8010,21 @@ Object.assign(EN, {
   "Mất kết nối trực tiếp, tải lại trang để cập nhật.": "Live connection lost, reload the page to update.",
   "Xem công khai": "Public view", "Bản xem công khai:": "Public view:", "Chỉ xem. Thông tin khác được ẩn.": "View only. Everything else is hidden.",
   "Đây là bản xem công khai, chỉ xem được. Đăng nhập để thêm hoặc sửa.": "This is the public view, read only. Log in to add or edit.",
-  "Tag công khai": "Public tags", "Xoá ca của người khác": "Delete someone else's shift", "Bạn là admin nên xoá được ca này.": "As an admin you can delete this shift.", "người khác": "someone else", "Tag mới": "New tag", "Bỏ tag": "Remove tag", "Thêm tag": "Add tag", "Tên công ty, ví dụ Crystal Loans": "Company name, e.g. Crystal Loans",
+  "Tag công khai": "Public tags", "Xoá hồ sơ và khách": "Delete the file and the client", "Chỉ xoá hồ sơ": "Delete the file only",
+  "Ca và việc vẫn giữ, cột Khách hàng để trống. Khách không còn trong ô chọn khách.": "Shifts and tasks stay, with the Client column left empty. The client disappears from the client picker.",
+  "Giữ khách trên lịch và trong ô chọn khách.": "Keep the client on the calendar and in the client picker.",
+  "Các việc vẫn giữ nguyên (giờ làm, lương không đổi), chỉ không còn tên khách. Khách cũng không còn trong ô chọn khách.": "The tasks stay as they are (hours and pay unchanged), only without the client. The client also disappears from the client picker.",
+  "Khách này chưa có việc nào trên lịch.": "This client has no tasks on the calendar yet.", "Xoá hồ sơ này?": "Delete this file?",
+  "Dấu đã nhận chứng từ và link OneDrive của hồ sơ cũng bị xoá, không lấy lại được.": "The file's received-document ticks and OneDrive links are deleted too. This cannot be undone.",
+  "Mới tạo trước": "Newest first", "Cũ trước": "Oldest first", "Tên khách A→Z": "Client name A→Z", "Tên khách Z→A": "Client name Z→A", "Sắp xếp": "Sort",
+  "Bấm để sắp xếp theo tên": "Click to sort by name", "Bấm để sắp xếp theo ngày tạo": "Click to sort by date created",
+  "Chia sẻ theo công ty": "Sharing by company", "Lịch chung": "Shared calendar", "Tài khoản khác được xem": "Other accounts can see",
+  "Công việc (Tasks) của công ty này": "Tasks of this company", "Hồ sơ khách & Master Data của công ty này": "Client files & Master Data of this company",
+  "Kỳ lương của tôi ở công ty này": "My pay period at this company", "Chỉ tài khoản đã đăng nhập thấy. Họ chỉ xem, không sửa được.": "Only logged-in accounts see this. They can view but not edit.",
+  "Chỉ xem": "View only", "Chia sẻ kỳ lương": "Shared pay periods", "Chỉ xem: việc của người khác": "View only: someone else's task", "Tiêu đề & định nghĩa": "Title & definition", "Chỉ tiêu đề": "Title only", "Tìm trong tiêu đề": "Search titles",
+  "Phạm vi tìm": "Search in", "Thử từ khoá khác, hoặc chọn Tiêu đề & định nghĩa để tìm cả trong định nghĩa.": "Try another keyword, or choose Title & definition to search definitions too.", "Mở trên OneDrive": "Open in OneDrive", "Gắn link OneDrive": "Add OneDrive link", "Sửa link OneDrive": "Edit OneDrive link",
+  "Link OneDrive của chứng từ này": "OneDrive link for this document", "Dán link OneDrive (https://…)": "Paste a OneDrive link (https://…)", "Bỏ link": "Remove link",
+  "Link phải bắt đầu bằng https://": "The link must start with https://", "Xoá ca của người khác": "Delete someone else's shift", "Bạn là admin nên xoá được ca này.": "As an admin you can delete this shift.", "người khác": "someone else", "Tag mới": "New tag", "Bỏ tag": "Remove tag", "Thêm tag": "Add tag", "Tên công ty, ví dụ Crystal Loans": "Company name, e.g. Crystal Loans",
   "Chưa có tag nào: không có gì công khai ngoài lịch chung.": "No tags yet: nothing is public apart from the shared calendar.",
   "Công ty của bạn đang công khai:": "Your companies that are public:", "Công khai theo tag": "Public by tag", "Tag này đã có.": "This tag already exists.",
   "Công ty nào có tên trùng một tag thì ai có link cũng xem được mọi thông tin liên quan, kể cả chưa đăng nhập: ca làm trên lịch, Công việc, Client's Profile và Master Data của khách thuộc công ty đó, cùng Rules và thuật ngữ của tài khoản có công ty đó. Chỉ xem, không sửa được. Tiền công, kỳ lương, thiết lập và các công ty khác vẫn ẩn.":
@@ -7672,7 +8035,9 @@ Object.assign(EN, {
 EN_RE.unshift(
   [/^(\d+)–(\d+) \/ (\d+) việc$/, "$1–$2 of $3 tasks"], [/^Trang (\d+)$/, "Page $1"],
   [/^Có (\d+) bản ghi đang lưu trên máy này nhưng chưa có trong tài khoản\.$/, "$1 records are saved on this device but not in your account yet."],
-  [/^Chưa lưu được: (.+)$/, "Not saved: $1"], [/^Đã xoá ca của (.+)$/, "Deleted the shift of $1"], [/^Đã có công ty (.+)$/, "Company $1 already exists"],
+  [/^Chưa lưu được: (.+)$/, "Not saved: $1"], [/^Đã xoá ca của (.+)$/, "Deleted the shift of $1"], [/^Xoá hồ sơ (.+)\?$/, "Delete the file of $1?"],
+  [/^Khách này đang gắn với (\d+) việc trong (\d+) ca \((.+)\)\.$/, "This client is on $1 tasks in $2 shifts ($3)."],
+  [/^Chỉ (.+) sửa được dữ liệu này$/, "Only $1 can edit this"], [/^của (.+)$/, "by $1"], [/^(.+) · chia sẻ$/, "$1 · shared"], [/^(.+) · của (.+)$/, "$1 · by $2"], [/^(\d+)–(\d+) \/ (\d+) mục$/, "$1–$2 of $3 entries"], [/^Chỉ hồ sơ của (.+) có link này$/, "Only $1's file has this link"], [/^Đã có công ty (.+)$/, "Company $1 already exists"],
   [/^Xoá ca (\S+) ngày (\S+) của (.+)\? Ca và mọi việc trong ca mất khỏi tài khoản của người đó, không lấy lại được\.$/,
     "Delete the $1 shift on $2 belonging to $3? The shift and all its tasks are removed from their account. This cannot be undone."], [/^Xem công khai · (.+)$/, "Public view · $1"],
 );
