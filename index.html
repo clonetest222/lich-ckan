@@ -1254,9 +1254,6 @@ details.gloss .gloss-body{padding:6px 0 2px 28px}
 .pub-toggles{display:flex; flex-direction:column; gap:4px}
 /* bản xem công khai: không có Thiết lập, Ngày của tôi, Kỳ tính lương */
 .pub-mode #setBtn, .pub-mode #subTabsBar{display:none !important}
-/* chưa đăng nhập: chỉ có màn hình đăng nhập, không thấy gì phía sau, không đóng được */
-.gate-mode .app{visibility:hidden}
-.gate-mode #authScreen [data-auth="close"]{display:none}
 .tag-list{display:flex; flex-wrap:wrap; gap:8px}
 .tag-chip{display:inline-flex; align-items:center; gap:4px; padding:5px 6px 5px 12px; border:1px solid var(--line); border-radius:999px; background:var(--surface-2); font-size:13px}
 .tag-chip b{font-weight:600}
@@ -2044,7 +2041,6 @@ const isDark = () => { const c = document.documentElement.getAttribute("data-the
 // Nút trên thanh trên cùng: chưa đăng nhập là "Đăng nhập"; đã đăng nhập là ảnh đại diện, tên, email, bấm mở menu.
 function markAuth() {
   document.body.classList.toggle("pub-mode", auth.mode === "public");
-  document.body.classList.toggle("gate-mode", auth.mode === "gate");
   const b = $("#authBtn"); if (!b) return;
   const inApp = auth.mode === "app" && auth.profile;
   if (!inApp) {
@@ -2291,11 +2287,18 @@ async function enterPublic() {
   return true;
 }
 // Chưa đăng nhập: xem công khai; không gọi được Supabase (ví dụ trong claude.ai) thì dùng dữ liệu trên máy như trước.
-// Chưa đăng nhập: không xem được thông tin gì, chỉ có màn hình đăng nhập (không đóng được).
-// Không gọi được Supabase (ví dụ trong claude.ai) thì vẫn dùng dữ liệu trên máy như trước.
+// Chưa đăng nhập: hiện đủ giao diện nhưng không có dữ liệu gì; thêm, sửa thì mời đăng nhập. Đăng nhập lúc nào cũng được.
+// Không gọi được Supabase (ví dụ trong claude.ai) thì không đăng nhập được: dùng dữ liệu trên máy như trước.
 async function startGuest() {
-  if (auth.sb && await sbReachable()) return enterGate();
+  if (auth.sb && await sbReachable()) return enterGuest();
   await startLocal();
+}
+function enterGuest() {
+  if (auth.mode === "app") return;
+  auth.mode = "guest"; db = null; remote = false; auth.ext = []; auth.extKey = ""; auth.tags = null; auth.pubSnap = "{}";
+  COLLS.forEach(c => { state[c] = []; });
+  setStatus(false, "Chưa đăng nhập");
+  markAuth(); render();
 }
 // Gọi thử một hàm cần đăng nhập: bị từ chối nghĩa là Supabase vẫn trả lời; lỗi mạng nghĩa là không gọi được.
 async function sbReachable() {
@@ -2304,22 +2307,14 @@ async function sbReachable() {
   catch (e) { sbErrText(e); }
   return !auth.down;
 }
-function enterGate() {
-  if (auth.mode === "app") return;
-  auth.mode = "gate"; db = null; remote = false; auth.ext = []; auth.extKey = ""; auth.tags = null;
-  COLLS.forEach(c => { state[c] = []; });
-  setStatus(false, "Chưa đăng nhập");
-  markAuth(); render();
-  if (!$("#authScreen")) openLogin(false, "Đăng nhập để xem lịch, công việc và hồ sơ khách.");
-}
 // Bản xem công khai chỉ xem: mọi lần lưu bị chặn, trả màn hình về như cũ rồi mời đăng nhập.
 function pubLock() {
-  if (auth.mode !== "public") return false;
+  if (auth.mode !== "public" && auth.mode !== "guest") return false;
   if (!rendering && !auth.pubAsk) auth.pubAsk = setTimeout(() => {
     auth.pubAsk = 0;
-    if (auth.mode !== "public") return;
+    if (auth.mode !== "public" && auth.mode !== "guest") return;
     restorePublic(); render();
-    if (!$("#authScreen")) openLogin(false, "Đây là bản xem công khai, chỉ xem được. Đăng nhập để thêm hoặc sửa.");
+    if (!$("#authScreen")) openLogin(false, auth.mode === "guest" ? "Đăng nhập để thêm hoặc sửa dữ liệu." : "Đây là bản xem công khai, chỉ xem được. Đăng nhập để thêm hoặc sửa.");
   }, 0);
   return true;
 }
@@ -2333,7 +2328,7 @@ function needLogin(then) {
   openLogin(false, "Đăng nhập để tạo ca làm.");
   return true;
 }
-function closeLogin() { if (auth.mode === "gate") return; auth.afterLogin = null; $("#modalHost").innerHTML = ""; }
+function closeLogin() { auth.afterLogin = null; $("#modalHost").innerHTML = ""; }
 // Đăng nhập xong: đóng hộp, rồi làm tiếp việc đang dở (ví dụ mở lại bảng tạo ca đúng khung giờ vừa kéo).
 function loginDone() {
   const then = auth.afterLogin;
@@ -3707,10 +3702,17 @@ function addMonthsClamp(d, n) {
   return new Date(y, m, Math.min(d.getDate(), last));
 }
 // Một kỳ dài bao lâu, tính từ ngày bắt đầu: dùng cho nút ‹ › và Kỳ hiện tại.
+// Ngày cuối của kỳ tháng / năm bắt đầu từ a: hôm trước ngày đó của tháng sau; tháng sau không có ngày đó
+// (bắt đầu 31/8, tháng 9 chỉ có 30 ngày) thì kết thúc vào ngày cuối tháng, để không hụt ngày nào.
+function payEnd(a) {
+  const p = state.pay, t = addMonthsClamp(a, (p.kind === "year" ? 12 : 1) * Math.max(1, p.n));
+  return t.getDate() === a.getDate() ? addDays(t, -1) : t;
+}
 function payStep(a, dir) {
   const p = state.pay, n = Math.max(1, p.n);
   if (p.kind === "week") return addDays(a, dir * 7 * n);
-  return addMonthsClamp(a, dir * (p.kind === "year" ? 12 : 1) * n);
+  // kỳ sau bắt đầu ngay sau ngày cuối của kỳ này, các kỳ nối liền nhau
+  return dir > 0 ? addDays(payEnd(a), 1) : addMonthsClamp(a, -(p.kind === "year" ? 12 : 1) * n);
 }
 function payRange() {
   const p = state.pay, a = parseISO(p.anchor);
@@ -3724,11 +3726,11 @@ function payRange() {
     return { from: f, to: t, label: `${p.n} tuần · ${shortVN(f)} – ${shortVN(t)}/${t.getFullYear()}` };
   }
   if (p.kind === "month") {
-    const f = a, t = addDays(addMonthsClamp(a, Math.max(1, p.n)), -1);   // bắt đầu đúng ngày chọn
+    const f = a, t = payEnd(a);   // bắt đầu đúng ngày chọn
     return { from: f, to: t, label: p.n === 1 && f.getDate() === 1 ? `Tháng ${f.getMonth() + 1}/${f.getFullYear()}`
       : `${p.n} tháng · ${shortVN(f)} – ${shortVN(t)}/${t.getFullYear()}` };
   }
-  const f = a, t = addDays(addMonthsClamp(a, 12 * Math.max(1, p.n)), -1);
+  const f = a, t = payEnd(a);
   return { from: f, to: t, label: f.getMonth() === 0 && f.getDate() === 1 ? (p.n > 1 ? `${f.getFullYear()} – ${t.getFullYear()}` : `Năm ${f.getFullYear()}`)
     : `${shortVN(f)}/${f.getFullYear()} – ${shortVN(t)}/${t.getFullYear()}` };
 }
@@ -4388,7 +4390,7 @@ function importLoanTemplate() {
 
 /* ---- chuyển dữ liệu kiểu cũ (cột cố định) sang kiểu tự định nghĩa ---- */
 function migrateLoan() {
-  if (auth.mode === "public") return;   // bản xem công khai: chỉ xem, không chuyển dữ liệu
+  if (auth.mode === "public" || auth.mode === "guest") return;   // chưa đăng nhập: không có dữ liệu để chuyển
   // Mã Áp dụng cho kiểu cũ (common, both…) đổi sang đúng chữ hiện trong bảng.
   state.loanRules.filter(r => Object.prototype.hasOwnProperty.call(LEGACY_WHO, r.appliesTo) && Array.isArray(r.conds))
     .forEach(r => put("loanRules", Object.assign({}, r, { appliesTo: LEGACY_WHO[r.appliesTo] }), true));
@@ -8068,7 +8070,7 @@ Object.assign(EN, {
   "Link phải bắt đầu bằng https://": "The link must start with https://",
   "Cho tài khoản khác xem link này khi hồ sơ được công khai": "Let other accounts see this link when the file is public",
   "Mở trên OneDrive · công khai cho tài khoản khác": "Open in OneDrive · public to other accounts",
-  "Chưa đăng nhập": "Not logged in", "Đăng nhập để xem lịch, công việc và hồ sơ khách.": "Log in to see the calendar, tasks and client files.",
+  "Chưa đăng nhập": "Not logged in", "Đăng nhập để thêm hoặc sửa dữ liệu.": "Log in to add or edit data.", "Đăng nhập để xem lịch, công việc và hồ sơ khách.": "Log in to see the calendar, tasks and client files.",
   "Mọi tài khoản đã đăng nhập thấy các ca trên lịch chung, chỉ xem chứ không sửa được; người chưa đăng nhập không thấy gì. Ở đây bạn chọn ca của mình hiện những gì; mặc định chỉ hiện khung giờ. Các ô ở trên là cài đặt chung; mở từng công ty để chọn riêng, công ty chưa chỉnh riêng thì theo cài đặt chung.": "Every logged-in account sees the shifts on the shared calendar, view only; people who are not logged in see nothing. Here you choose what your shifts show; by default only the time slot. The boxes above are the general settings; open a company to choose separately for it, and companies you have not changed follow the general settings.",
   "Công ty nào có tên trùng một tag thì mọi tài khoản đã đăng nhập xem được Công việc, Client's Profile và Master Data của khách thuộc công ty đó (kèm Rules của chủ hồ sơ). Chỉ xem, không sửa được. Người chưa đăng nhập không thấy gì. Tiền công, kỳ lương và các công ty khác vẫn ẩn.": "When a company's name matches a tag, every logged-in account can see its Tasks, plus the Client's Profile and Master Data of its clients (with the owner's Rules). View only, nothing can be edited. People who are not logged in see nothing. Pay, pay periods and every other company stay hidden.", "Xoá ca của người khác": "Delete someone else's shift", "Bạn là admin nên xoá được ca này.": "As an admin you can delete this shift.", "người khác": "someone else", "Tag mới": "New tag", "Bỏ tag": "Remove tag", "Thêm tag": "Add tag", "Tên công ty, ví dụ Crystal Loans": "Company name, e.g. Crystal Loans",
   "Chưa có tag nào: không có gì công khai ngoài lịch chung.": "No tags yet: nothing is public apart from the shared calendar.",
