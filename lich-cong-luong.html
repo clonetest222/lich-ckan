@@ -1103,7 +1103,7 @@ details.gloss .gloss-body{padding:6px 0 2px 28px}
 .tk-table td{vertical-align:middle; padding:9px 12px}
 /* cột cố định độ rộng, chữ dài tự xuống dòng trong ô như Wrap Text của Excel */
 .tk-table{table-layout:fixed; width:100%}
-.tk-table td.tk-t, .tk-table td.tk-c, .tk-table td.tk-cc{overflow-wrap:anywhere; word-break:break-word}
+.tk-table td.tk-t, .tk-table td.tk-c, .tk-table td.tk-cc, .tk-table td.tk-w{overflow-wrap:anywhere; word-break:break-word}
 .tk-table .it-cl{white-space:normal; text-align:left; max-width:100%; overflow-wrap:anywhere}
 .own-tag{display:inline-block; margin-left:6px; padding:1px 7px; border-radius:6px; background:var(--accent-soft, rgba(90,140,255,.15)); color:var(--accent-ink); font-size:11px; font-weight:600; white-space:nowrap; vertical-align:1px}
 .dc-opt{display:flex; gap:10px; align-items:flex-start; padding:10px 12px; border:1px solid var(--line); border-radius:12px; cursor:pointer}
@@ -1145,6 +1145,17 @@ details.gloss .gloss-body{padding:6px 0 2px 28px}
   display:inline-block; max-width:100%; white-space:normal; overflow-wrap:anywhere; text-align:left}
 .tk-table .it-cl:hover{background:var(--accent); color:#fff; border-color:var(--accent)}
 .pager{display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:16px}
+/* nút phễu sắp xếp ở trang Công việc */
+.tk-sort{position:relative; flex:none}
+.tk-sort-btn svg{width:17px; height:17px; stroke-width:1.8; stroke-linejoin:round}
+.tk-sort-btn.on{color:var(--accent-ink); border-color:var(--accent-line); background:var(--accent-soft); position:relative}
+.tk-sort-btn.on::after{content:""; position:absolute; top:3px; right:3px; width:7px; height:7px; border-radius:50%; background:var(--accent)}
+.tk-sort-menu{position:absolute; right:0; top:calc(100% + 6px); z-index:30; min-width:210px; padding:6px; border-radius:12px; background:var(--surface); border:1px solid var(--line-2); box-shadow:0 14px 34px rgba(0,0,0,.28); display:flex; flex-direction:column; gap:2px}
+.tk-sort-h{font-size:10.5px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); padding:6px 10px 4px}
+.tk-sort-menu button{display:flex; align-items:center; gap:8px; padding:8px 10px; border:0; border-radius:8px; background:none; color:var(--ink); font:inherit; font-size:13.5px; text-align:left; cursor:pointer}
+.tk-sort-menu button:hover, .tk-sort-menu button:focus-visible{background:var(--surface-2)}
+.tk-sort-menu button[aria-checked="true"]{color:var(--accent-ink); font-weight:600}
+.tk-sort-tick{width:14px; flex:none}
 .pager button{width:40px; height:40px; border-radius:50%; display:grid; place-items:center; font-size:14.5px; color:var(--ink-2);
   background:var(--surface-2); border:1px solid var(--line); transition:background .15s, border-color .15s, color .15s}
 .pager button:hover{border-color:var(--accent-line); color:var(--ink)}
@@ -1420,10 +1431,13 @@ input.pct:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px v
 .status .dot{width:7px; height:7px; border-radius:50%; background:var(--ok)}
 .status .dot.off{background:var(--muted)}
 @media (min-width:641px) and (max-width:1280px){ .status span, #themeTxt{display:none} .status{padding:0 4px} }
-@media (min-width:641px) and (max-width:900px){
+/* trang Công việc: bảng nhiều cột, cho rộng hơn trang thường */
+#tasksBody.wrap{max-width:1320px}
+@media (min-width:641px) and (max-width:1100px){
   .tk-table thead{display:none}
   .tk-table,.tk-table tbody{display:block}
-  .tk-table tr{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto auto; grid-template-areas:"t t t go" "c co d s"; gap:8px 14px; padding:12px 14px; border-bottom:1px solid var(--line); align-items:center}
+  .tk-table tr{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) auto auto; grid-template-areas:"t t t t go" "w c co d s"; gap:8px 14px; padding:12px 14px; border-bottom:1px solid var(--line); align-items:center}
+  .tk-table td.tk-w{grid-area:w; font-size:13px}
   .tk-table tr:last-child{border-bottom:none}
   .tk-table td{display:block; padding:0; border:none}
   .tk-table td.tk-t{grid-area:t; font-weight:600; font-size:14.5px}
@@ -1502,7 +1516,8 @@ input.pct:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px v
   /* bảng Công việc: mỗi việc một thẻ */
   .tk-table thead{display:none}
   .tk-table,.tk-table tbody{display:block}
-  .tk-table tr{display:grid; grid-template-columns:minmax(0,1fr) auto; grid-template-areas:"t go" "c c" "co co" "d s"; gap:6px 10px; padding:12px 14px; border-bottom:1px solid var(--line)}
+  .tk-table tr{display:grid; grid-template-columns:minmax(0,1fr) auto; grid-template-areas:"t go" "w w" "c c" "co co" "d s"; gap:6px 10px; padding:12px 14px; border-bottom:1px solid var(--line)}
+  .tk-table td.tk-w{grid-area:w; font-size:13px; color:var(--ink-2)}
   .tk-table tr:last-child{border-bottom:none}
   .tk-table td{display:block; padding:0; border:none}
   .tk-table td.tk-t{grid-area:t; font-weight:600; font-size:14.5px; align-self:center}
@@ -1728,7 +1743,7 @@ function taskItems(t) {
 // Ca kiểu cũ (một người, một danh sách) vẫn đọc được: thành người làm đầu tiên.
 function taskCrew(t) {
   if (Array.isArray(t.crew) && t.crew.length) {
-    return t.crew.map((w, i) => ({ id: w.id || "w" + i, personId: w.personId || "", items: (w.items || []).map(x => ({ id: x.id || uid(), text: x.text || "", clientId: x.clientId || "", done: !!x.done })) }));
+    return t.crew.map((w, i) => ({ id: w.id || "w" + i, personId: w.personId || "", personName: w.personName || "", items: (w.items || []).map(x => ({ id: x.id || uid(), text: x.text || "", clientId: x.clientId || "", done: !!x.done })) }));
   }
   return [{ id: "w0", personId: t.personId || "", items: taskItems(t) }];
 }
@@ -3641,11 +3656,13 @@ function renderTasks() {
       if (state.taskOnly === "done" && !r.it.done) return false;
       if (state.taskOnly === "pending" && r.it.done) return false;
       if (!q) return true;
-      return [r.it.text, (cl(r.it.clientId) || {}).name || "", coName(r.t.companyId), peName(r.w.personId)].join(" ").toLowerCase().includes(q);
+      return [r.it.text, (cl(r.it.clientId) || {}).name || "", coName(r.t.companyId), workerName(r.w)].join(" ").toLowerCase().includes(q);
     })
-    .sort((x, y) => y.t.date.localeCompare(x.t.date) || toMin(x.t.start) - toMin(y.t.start));
+    .sort(taskSorter());
   const count = id => all.filter(t => id === "all" || canonCo(t.companyId) === id).reduce((n, t) => n + taskItems(t).length, 0);
   const tabs = [["all", "Tất cả"], ...uniqCos("", true).filter(c => all.some(t => canonCo(t.companyId) === c.id) || !c.shared).map(c => [c.id, c.name]), ...(all.some(t => !t.companyId) ? [["", "Chưa gán công ty"]] : [])];
+  // tab công ty không còn (vd. vừa đổi sang tài khoản khác): về Tất cả
+  if (tab !== "all" && !tabs.some(x => x[0] === tab)) { state.taskTab = "all"; state.taskPage = 1; return renderTasks(); }
   const showCo = tab === "all";
   // Phân trang: mỗi trang 100 việc
   const PER = 100, pages = Math.max(1, Math.ceil(rows.length / PER));
@@ -3659,16 +3676,18 @@ function renderTasks() {
       <div class="seg" id="taskOnly">${[["", "Tất cả"], ["pending", "Chưa xong"], ["done", "Đã xong"]].map(([k, n]) =>
         `<button data-taskonly="${k}" aria-pressed="${(state.taskOnly || "") === k}">${n}</button>`).join("")}</div>
       <input id="taskQ" class="mini" style="width:min(240px,100%)" placeholder="Tìm việc, khách, người làm" value="${esc(state.taskQ || "")}">
+      ${taskSortHTML()}
     </div></div>
     <div class="card">
       <div class="card-h"><h2>${esc((tabs.find(x => x[0] === tab) || ["", "Tất cả"])[1])}</h2>
         <span class="lbl">${rows.filter(r => r.it.done).length}/${rows.length} việc xong</span></div>
       <div class="card-b">
         ${rows.length ? `<div class="tbl-wrap"><table class="tk-table">
-          <thead><tr><th style="width:118px">Ngày tháng</th><th>Việc cần làm</th><th style="width:26%">Khách hàng</th>${showCo ? `<th style="width:15%">Công ty</th>` : ""}<th style="width:150px">Trạng thái</th><th style="width:48px"></th></tr></thead>
+          <thead><tr><th style="width:118px">Ngày tháng</th><th>Việc cần làm</th><th style="width:13%">Tên người làm</th><th style="width:21%">Khách hàng</th>${showCo ? `<th style="width:14%">Công ty</th>` : ""}<th style="width:150px">Trạng thái</th><th style="width:48px"></th></tr></thead>
           <tbody>${shown.map(r => `<tr class="${r.it.done ? "is-done" : ""} ${r.t.shared ? "shared-row" : ""}">
             <td class="num tk-d">${dmy(r.t.date)}</td>
             <td class="tk-t"><span translate="no" class="it-t ${r.it.done ? "got" : ""}">${r.it.text ? esc(r.it.text) : L("Việc")}</span></td>
+            <td class="tk-w">${workerName(r.w) ? `<span translate="no">${esc(workerName(r.w))}</span>` : muted("—")}</td>
             <td class="tk-c">${r.it.clientId ? `<button type="button" class="it-cl" data-openclient="${r.it.clientId}" title="Mở hồ sơ khách">${esc((cl(r.it.clientId) || {}).name || "Khách")}</button>` : muted("—")}</td>
             ${showCo ? `<td class="tk-cc"><span class="tk-co"><i class="swatch" style="background:${coColor(r.t.companyId)}"></i>${esc(coName(r.t.companyId))}</span></td>` : ""}
             <td class="tk-s">${statusSel(r.t.id, r.it.id, r.it.done, !!r.t.shared)}</td>
@@ -3679,6 +3698,43 @@ function renderTasks() {
     </div>`;
 }
 
+// Tên người làm của một người trong ca: theo danh sách người làm, không có (ca người khác chia sẻ) thì lấy tên lưu trong ca.
+const workerName = w => ((w && pe(w.personId)) || {}).name || (w && w.personName) || "";
+// Sắp xếp danh sách việc (nút phễu): theo ngày mới nhất / cũ nhất trước, hoặc theo tên việc A→Z / Z→A. Nhớ trên máy này.
+const TASK_SORTS = [["new", "Ngày mới nhất trước"], ["old", "Ngày cũ nhất trước"], ["az", "A-Z"], ["za", "Z-A"]];
+const taskSort = () => { try { const v = localStorage.getItem("cakip.taskSort"); return TASK_SORTS.some(x => x[0] === v) ? v : "new"; } catch (e) { return "new"; } };
+function taskSorter() {
+  const v = taskSort(), coll = new Intl.Collator("vi", { sensitivity: "base", numeric: true });
+  const byDate = (x, y) => y.t.date.localeCompare(x.t.date) || toMin(x.t.start) - toMin(y.t.start);
+  if (v === "old") return (x, y) => x.t.date.localeCompare(y.t.date) || toMin(x.t.start) - toMin(y.t.start);
+  if (v === "az" || v === "za") return (x, y) => (v === "az" ? 1 : -1) * coll.compare((x.it.text || "").trim(), (y.it.text || "").trim()) || byDate(x, y);
+  return byDate;
+}
+const FUNNEL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M3.5 5h17l-6.5 7.5v5.5l-4 2v-7.5z"/></svg>';
+function taskSortHTML() {
+  const v = taskSort(), open = !!state.taskSortOpen;
+  return `<div class="tk-sort">
+    <button type="button" class="btn icon ghost tk-sort-btn ${v !== "new" ? "on" : ""}" id="taskSortBtn" title="Sắp xếp" aria-label="Sắp xếp" aria-haspopup="menu" aria-expanded="${open}">${FUNNEL}</button>
+    ${open ? `<div class="tk-sort-menu" role="menu"><div class="tk-sort-h">Sắp xếp theo</div>${TASK_SORTS.map(([k, n]) =>
+      `<button type="button" role="menuitemradio" aria-checked="${v === k}" data-tasksort="${k}"><span class="tk-sort-tick" aria-hidden="true">${v === k ? "✓" : ""}</span><span>${n}</span></button>`).join("")}</div>` : ""}
+  </div>`;
+}
+document.addEventListener("click", e => {
+  const t = e.target; if (!t.closest) return;
+  const pick = t.closest("[data-tasksort]");
+  if (pick) { try { localStorage.setItem("cakip.taskSort", pick.dataset.tasksort); } catch (err) { } state.taskSortOpen = false; state.taskPage = 1; renderTasks(); return; }
+  if (t.closest("#taskSortBtn")) { state.taskSortOpen = !state.taskSortOpen; renderTasks(); return; }
+  if (state.taskSortOpen && !t.closest(".tk-sort-menu")) closeTaskSort();
+});
+// đóng menu mà không vẽ lại cả thanh công cụ (đang gõ ở ô tìm thì không mất con trỏ)
+function closeTaskSort() {
+  state.taskSortOpen = false;
+  const m = $(".tk-sort-menu"); if (m) m.remove();
+  const b = $("#taskSortBtn"); if (b) b.setAttribute("aria-expanded", "false");
+}
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape" && state.taskSortOpen) { closeTaskSort(); const b = $("#taskSortBtn"); if (b) b.focus(); }
+});
 // Thanh số trang: tối đa 5 số quanh trang đang xem; « ‹ chỉ hiện khi không ở trang đầu, › » khi không ở trang cuối.
 function pagerHTML(page, pages, total, per, kind) {
   if (pages <= 1) return "";
@@ -8051,7 +8107,7 @@ Object.assign(EN, {
   "Mất kết nối trực tiếp, tải lại trang để cập nhật.": "Live connection lost, reload the page to update.",
   "Xem công khai": "Public view", "Bản xem công khai:": "Public view:", "Chỉ xem. Thông tin khác được ẩn.": "View only. Everything else is hidden.",
   "Đây là bản xem công khai, chỉ xem được. Đăng nhập để thêm hoặc sửa.": "This is the public view, read only. Log in to add or edit.",
-  "Tag công khai": "Public tags",
+  "Tag công khai": "Public tags", "Sắp xếp theo": "Sort by", "Ngày mới nhất trước": "Newest date first", "Ngày cũ nhất trước": "Oldest date first", "Tên người làm": "Worker",
   "Bật \"Hiện nội dung việc\" thì tài khoản khác cũng thấy các việc này ở trang Công việc (tên khách, người làm, công ty theo các ô trên).": "With \"Show task details\" on, other accounts also see these tasks on their Tasks page (client, worker and company names follow the boxes above).", "Xoá hồ sơ và khách": "Delete the file and the client", "Chỉ xoá hồ sơ": "Delete the file only",
   "Ca và việc vẫn giữ, cột Khách hàng để trống. Khách không còn trong ô chọn khách.": "Shifts and tasks stay, with the Client column left empty. The client disappears from the client picker.",
   "Giữ khách trên lịch và trong ô chọn khách.": "Keep the client on the calendar and in the client picker.",
