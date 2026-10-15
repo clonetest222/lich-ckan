@@ -1254,6 +1254,9 @@ details.gloss .gloss-body{padding:6px 0 2px 28px}
 .pub-toggles{display:flex; flex-direction:column; gap:4px}
 /* bản xem công khai: không có Thiết lập, Ngày của tôi, Kỳ tính lương */
 .pub-mode #setBtn, .pub-mode #subTabsBar{display:none !important}
+/* chưa đăng nhập: chỉ có màn hình đăng nhập, không thấy gì phía sau, không đóng được */
+.gate-mode .app{visibility:hidden}
+.gate-mode #authScreen [data-auth="close"]{display:none}
 .tag-list{display:flex; flex-wrap:wrap; gap:8px}
 .tag-chip{display:inline-flex; align-items:center; gap:4px; padding:5px 6px 5px 12px; border:1px solid var(--line); border-radius:999px; background:var(--surface-2); font-size:13px}
 .tag-chip b{font-weight:600}
@@ -2041,6 +2044,7 @@ const isDark = () => { const c = document.documentElement.getAttribute("data-the
 // Nút trên thanh trên cùng: chưa đăng nhập là "Đăng nhập"; đã đăng nhập là ảnh đại diện, tên, email, bấm mở menu.
 function markAuth() {
   document.body.classList.toggle("pub-mode", auth.mode === "public");
+  document.body.classList.toggle("gate-mode", auth.mode === "gate");
   const b = $("#authBtn"); if (!b) return;
   const inApp = auth.mode === "app" && auth.profile;
   if (!inApp) {
@@ -2287,18 +2291,19 @@ async function enterPublic() {
   return true;
 }
 // Chưa đăng nhập: xem công khai; không gọi được Supabase (ví dụ trong claude.ai) thì dùng dữ liệu trên máy như trước.
-// Chưa đăng nhập: hiện đủ giao diện nhưng không có dữ liệu gì; thêm, sửa thì mời đăng nhập. Đăng nhập lúc nào cũng được.
+// Chưa đăng nhập: chỉ có màn hình đăng nhập (không đóng được), phía sau ẩn hết, không tải dữ liệu nào.
 // Không gọi được Supabase (ví dụ trong claude.ai) thì không đăng nhập được: dùng dữ liệu trên máy như trước.
 async function startGuest() {
-  if (auth.sb && await sbReachable()) return enterGuest();
+  if (auth.sb && await sbReachable()) return enterGate();
   await startLocal();
 }
-function enterGuest() {
+function enterGate() {
   if (auth.mode === "app") return;
-  auth.mode = "guest"; db = null; remote = false; auth.ext = []; auth.extKey = ""; auth.tags = null; auth.pubSnap = "{}";
+  auth.mode = "gate"; db = null; remote = false; auth.ext = []; auth.extKey = ""; auth.tags = null;
   COLLS.forEach(c => { state[c] = []; });
   setStatus(false, "Chưa đăng nhập");
   markAuth(); render();
+  if (!$("#authScreen")) openLogin(false, "Đăng nhập để xem lịch, công việc và hồ sơ khách.");
 }
 // Gọi thử một hàm cần đăng nhập: bị từ chối nghĩa là Supabase vẫn trả lời; lỗi mạng nghĩa là không gọi được.
 async function sbReachable() {
@@ -2309,12 +2314,12 @@ async function sbReachable() {
 }
 // Bản xem công khai chỉ xem: mọi lần lưu bị chặn, trả màn hình về như cũ rồi mời đăng nhập.
 function pubLock() {
-  if (auth.mode !== "public" && auth.mode !== "guest") return false;
+  if (auth.mode !== "public" && auth.mode !== "gate") return false;
   if (!rendering && !auth.pubAsk) auth.pubAsk = setTimeout(() => {
     auth.pubAsk = 0;
-    if (auth.mode !== "public" && auth.mode !== "guest") return;
+    if (auth.mode !== "public" && auth.mode !== "gate") return;
     restorePublic(); render();
-    if (!$("#authScreen")) openLogin(false, auth.mode === "guest" ? "Đăng nhập để thêm hoặc sửa dữ liệu." : "Đây là bản xem công khai, chỉ xem được. Đăng nhập để thêm hoặc sửa.");
+    if (!$("#authScreen")) openLogin(false, auth.mode === "gate" ? "Đăng nhập để xem lịch, công việc và hồ sơ khách." : "Đây là bản xem công khai, chỉ xem được. Đăng nhập để thêm hoặc sửa.");
   }, 0);
   return true;
 }
@@ -2328,7 +2333,7 @@ function needLogin(then) {
   openLogin(false, "Đăng nhập để tạo ca làm.");
   return true;
 }
-function closeLogin() { auth.afterLogin = null; $("#modalHost").innerHTML = ""; }
+function closeLogin() { if (auth.mode === "gate") return; auth.afterLogin = null; $("#modalHost").innerHTML = ""; }
 // Đăng nhập xong: đóng hộp, rồi làm tiếp việc đang dở (ví dụ mở lại bảng tạo ca đúng khung giờ vừa kéo).
 function loginDone() {
   const then = auth.afterLogin;
@@ -4390,7 +4395,7 @@ function importLoanTemplate() {
 
 /* ---- chuyển dữ liệu kiểu cũ (cột cố định) sang kiểu tự định nghĩa ---- */
 function migrateLoan() {
-  if (auth.mode === "public" || auth.mode === "guest") return;   // chưa đăng nhập: không có dữ liệu để chuyển
+  if (auth.mode === "public" || auth.mode === "gate") return;   // chưa đăng nhập: không có dữ liệu để chuyển
   // Mã Áp dụng cho kiểu cũ (common, both…) đổi sang đúng chữ hiện trong bảng.
   state.loanRules.filter(r => Object.prototype.hasOwnProperty.call(LEGACY_WHO, r.appliesTo) && Array.isArray(r.conds))
     .forEach(r => put("loanRules", Object.assign({}, r, { appliesTo: LEGACY_WHO[r.appliesTo] }), true));
