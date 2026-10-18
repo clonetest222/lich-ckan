@@ -1719,6 +1719,38 @@ function asOwner(c, fn) {
 }
 const allTasks = () => state.tasks.concat(SH().tasks);
 const isShared = id => String(id || "").startsWith("sh:");
+// Sửa được không: dữ liệu của mình, hoặc của tài khoản khác cho sửa (Thiết lập → Theo từng công ty → Tài khoản khác được sửa).
+const canEdit = x => !x || !x.shared || !!x.shared.edit;
+const packOf = id => { const m = /^sh:(\d+):/.exec(String(id || "")); return m && auth.shared && auth.shared.owners ? { k: +m[1], prefix: m[0], owner: auth.shared.owners[+m[1]] } : null; };
+// Bỏ tiền tố "sh:k:" khỏi mọi mã trong bản ghi để lưu đúng mã gốc của tài khoản chủ.
+function unprefix(v, prefix) {
+  if (typeof v === "string") return v.startsWith(prefix) ? v.slice(prefix.length) : v;
+  if (Array.isArray(v)) return v.map(x => unprefix(x, prefix));
+  if (v && typeof v === "object") { const o = {}; Object.keys(v).forEach(k => { if (k !== "shared") o[k] = unprefix(v[k], prefix); }); return o; }
+  return v;
+}
+const EDIT_RPC = { save: "shared_save_doc", del: "shared_delete_doc" };
+// Lưu, xoá thẳng vào tài khoản chủ; máy chủ kiểm lại quyền, không được thì tải lại phần chia sẻ.
+function sharedPut(coll, obj, quiet) {
+  const ap = packOf(obj.id), arr = SH()[coll], i = arr.findIndex(x => x.id === obj.id), who = arr[i].shared;
+  const rec = Object.assign({}, obj, { shared: who });
+  arr[i] = rec;
+  if (!quiet) render();
+  const body = unprefix(obj, ap.prefix); delete body.id;
+  sbSerial("sh:" + coll + "/" + obj.id, coll, () => sbq(auth.sb.rpc(EDIT_RPC.save, { p_owner: ap.owner, p_collection: coll, p_id: obj.id.slice(ap.prefix.length), p_doc: body })))
+    .then(() => setStatus(true, "Đã lưu vào tài khoản " + (who.name || "khác")))
+    .catch(e => { setStatus(false, "Chưa lưu được: " + sbErrText(e)); loadShared(); });
+  return rec;
+}
+function sharedDrop(coll, id) {
+  const ap = packOf(id), who = ((SH()[coll] || []).find(x => x.id === id) || {}).shared || {};
+  auth.shared[coll] = auth.shared[coll].filter(x => x.id !== id);
+  render();
+  sbSerial("sh:" + coll + "/" + id, coll, () => sbq(auth.sb.rpc(EDIT_RPC.del, { p_owner: ap.owner, p_collection: coll, p_id: id.slice(ap.prefix.length) })))
+    .then(() => setStatus(true, "Đã xoá trong tài khoản " + (who.name || "khác")))
+    .catch(e => { setStatus(false, "Chưa xoá được: " + sbErrText(e)); loadShared(); });
+}
+const sharedEditable = (coll, id) => { const x = (SH()[coll] || []).find(o => o.id === id); return !!x && canEdit(x) && !!packOf(id); };
 // Dữ liệu tài khoản khác chia sẻ: không hiện tên người sở hữu (đã bỏ nhãn "của …"), chỉ khoá không cho sửa.
 const pe = id => state.people.find(p => p.id === id) || SH().people.find(p => p.id === id);
 const cl = id => state.clients.find(c => c.id === id) || SH().clients.find(c => c.id === id);
@@ -1826,7 +1858,7 @@ function sharedDenied(coll, id) {
   setTimeout(render, 0);   // trả màn hình về như cũ
 }
 function put(coll, obj, quiet) {
-  if (isShared(obj.id)) { sharedDenied(coll, obj.id); return obj; }
+  if (isShared(obj.id)) { if (sharedEditable(coll, obj.id)) return sharedPut(coll, obj, quiet); sharedDenied(coll, obj.id); return obj; }
   if (!obj.id) obj.id = uid();
   if (pubLock()) return obj;
   const arr = state[coll], i = arr.findIndex(x => x.id === obj.id);
@@ -1834,10 +1866,22 @@ function put(coll, obj, quiet) {
   if (!quiet) render();
   if (remote) { const { id, ...body } = obj; db.collection(coll).doc(id).set(body).catch(dbErr); }
   else saveLocal();
+  if (coll === "tasks" && syncTaskClients(obj) && !quiet) render();
   return obj;
 }
+// Khách trong ca theo công ty của ca: lưu ca có công ty thì khách của ca mang công ty đó (khách tạo lúc chưa chọn
+// công ty, hoặc ca đổi sang công ty khác). Chia sẻ hồ sơ khách theo công ty nên cần khớp. Trả về có khách nào đổi không.
+function syncTaskClients(t) {
+  if (!t.companyId) return false;
+  let n = 0;
+  taskClients(t).forEach(cid => {
+    const c = state.clients.find(x => x.id === cid);
+    if (c && (c.companyId || "") !== t.companyId) { put("clients", Object.assign({}, c, { companyId: t.companyId }), true); n++; }
+  });
+  return n > 0;
+}
 function drop(coll, id) {
-  if (isShared(id)) { sharedDenied(coll, id); return; }
+  if (isShared(id)) { if (sharedEditable(coll, id)) return sharedDrop(coll, id); sharedDenied(coll, id); return; }
   if (pubLock()) return;
   state[coll] = state[coll].filter(x => x.id !== id);
   render();
@@ -1872,6 +1916,9 @@ const PUBLIC_KEYS = [
 const PUBLIC_DEFAULT = { "calendar.busy": true };
 // Chia sẻ với các tài khoản đã đăng nhập, riêng từng công ty (mặc định tắt).
 const SHARE_KEYS = [["share.tasks", "Công việc (Tasks) của công ty này"], ["share.cases", "Hồ sơ khách & Master Data của công ty này"], ["share.pay", "Kỳ lương của tôi ở công ty này"]];
+// Cho tài khoản khác sửa, xoá (không tạo mới); bật sửa thì cũng xem được (ô xem tương ứng tự bật).
+const EDIT_KEYS = [["edit.tasks", "Công việc (Tasks) của công ty này", "share.tasks"], ["edit.cases", "Hồ sơ khách & Master Data của công ty này", "share.cases"]];
+const editOf = k => (EDIT_KEYS.find(x => x[2] === k) || [])[0];
 // mode: "boot" lúc mới mở · "local" dữ liệu trên máy · "app" đã đăng nhập, dữ liệu trên Supabase
 const auth = { sb: null, session: null, profile: null, mode: "boot", down: false, lastErr: "", members: null, mySettings: null,
   channel: null, importable: null, ext: [], extKey: "", localSubbed: false, tags: null, pubSnap: "", pubAsk: 0 };
@@ -2153,23 +2200,27 @@ async function loadShared() {
   let res;
   try { res = await sbq(auth.sb.rpc("shared_data", {})); } catch (e) { auth.shared = { companies: [], people: [], clients: [], loanCases: [], tasks: [] }; return; }
   if (auth.mode !== "app") return;
-  const out = { companies: [], people: [], clients: [], loanCases: [], tasks: [], rules: {} };
+  const out = { companies: [], people: [], clients: [], loanCases: [], tasks: [], rules: {}, owners: {} };
   (Array.isArray(res && res.packs) ? res.packs : []).forEach((p, k) => {
     const id = v => (v ? "sh:" + k + ":" + v : v), who = { owner: p.owner, name: p.name || "", k };
+    out.owners[k] = p.owner;
+    const editCl = new Set(Array.isArray(p.editClients) ? p.editClients : []), as = edit => Object.assign({}, who, { edit });
     if (Array.isArray(p.loanRules)) out.rules[k] = { loanRules: p.loanRules, loanConfig: Array.isArray(p.loanConfig) ? p.loanConfig : [] };
     const arr = c => (Array.isArray(p[c]) ? p[c] : []), flags = {};
     arr("companies").forEach(x => { const sh = x.share || {}; flags[x.id] = sh;
       // chủ không cho hiện tên công ty trên lịch chung: gọi là "Công ty của …"
       out.companies.push(Object.assign({}, x, { id: id(x.id), name: x.name || "Công ty của " + (p.name || "người khác"), shared: Object.assign({}, who, sh) })); });
     arr("people").forEach(x => out.people.push(Object.assign({}, x, { id: id(x.id), shared: who })));
-    arr("clients").forEach(x => out.clients.push(Object.assign({}, x, { id: id(x.id), companyId: id(x.companyId), caseId: id(x.caseId), shared: who })));
-    arr("loanCases").forEach(x => out.loanCases.push(Object.assign({}, x, { id: id(x.id), clientId: id(x.clientId), shared: who })));
+    arr("clients").forEach(x => out.clients.push(Object.assign({}, x, { id: id(x.id), companyId: id(x.companyId), caseId: id(x.caseId), shared: as(editCl.has(x.id)) })));
+    // hồ sơ sửa được khi khách của nó sửa được (như hàm _case_edit trên Supabase)
+    arr("loanCases").forEach(x => out.loanCases.push(Object.assign({}, x, { id: id(x.id), clientId: id(x.clientId),
+      shared: as((!!x.clientId && editCl.has(x.clientId)) || arr("clients").some(c => c.caseId === x.id && editCl.has(c.id))) })));
     arr("tasks").forEach(t => {
       const crew = (Array.isArray(t.crew) ? t.crew : []).map(w => Object.assign({}, w, { personId: id(w.personId),
         items: (Array.isArray(w.items) ? w.items : []).map(it => Object.assign({}, it, { clientId: id(it.clientId) })) }));
       const sh = flags[t.companyId] || {};
       out.tasks.push(Object.assign({}, t, { id: id(t.id), companyId: id(t.companyId), crew, clientId: id(t.clientId),
-        items: crew[0] ? crew[0].items : [], personId: crew[0] ? crew[0].personId : "", shared: Object.assign({}, who, { list: !!sh.tasks, pay: !!sh.pay }) }));
+        items: crew[0] ? crew[0].items : [], personId: crew[0] ? crew[0].personId : "", shared: Object.assign({}, who, { list: !!sh.tasks, pay: !!sh.pay, edit: !!(sh.edit && sh.edit.tasks) }) }));
     });
   });
   auth.shared = out;
@@ -2484,9 +2535,13 @@ function pubCompaniesHTML() {
           <b translate="no">${esc(c.name || "Công ty")}</b>${isTagged(c.name) ? `<span class="pill live">Công khai theo tag</span>` : ""}<span class="pub-co-state ${custom ? "own" : ""}">${custom ? "Cài đặt riêng" : "Theo cài đặt chung"}</span></summary>
         <div class="pub-co-body"><div class="lbl" style="margin:0">Lịch chung</div><div class="pub-toggles">${pubToggles(c.id)}</div>
           <small style="color:var(--muted);font-size:12px">Bật "Hiện nội dung việc" thì tài khoản khác cũng thấy các việc này ở trang Công việc (tên khách, người làm, công ty theo các ô trên).</small>
-          <div class="share-grp"><div class="lbl">Tài khoản khác được xem</div><div class="pub-toggles">${SHARE_KEYS.map(([k, n]) =>
-            `<label class="chk"><input type="checkbox" data-pub="${k}" data-pubco="${esc(c.id)}" ${pubVal(c.id, k) ? "checked" : ""}><span class="t">${n}</span></label>`).join("")}</div>
+          <div class="share-grp"><div class="lbl">Tài khoản khác được xem</div><div class="pub-toggles">${SHARE_KEYS.map(([k, n]) => {
+            const byEdit = editOf(k) && pubVal(c.id, editOf(k));
+            return `<label class="chk"><input type="checkbox" data-pub="${k}" data-pubco="${esc(c.id)}" ${pubVal(c.id, k) || byEdit ? "checked" : ""} ${byEdit ? `disabled title="Đang cho sửa nên cũng xem được"` : ""}><span class="t">${n}</span></label>`; }).join("")}</div>
             <small style="color:var(--muted);font-size:12px">Chỉ tài khoản đã đăng nhập thấy. Họ chỉ xem, không sửa được.</small></div>
+          <div class="share-grp"><div class="lbl">Tài khoản khác được sửa</div><div class="pub-toggles">${EDIT_KEYS.map(([k, n]) =>
+            `<label class="chk"><input type="checkbox" data-pub="${k}" data-pubco="${esc(c.id)}" ${pubVal(c.id, k) ? "checked" : ""}><span class="t">${n}</span></label>`).join("")}</div>
+            <small style="color:var(--muted);font-size:12px">Tài khoản đã đăng nhập xem, sửa và xoá được ca làm, hồ sơ đã có của công ty này; không tạo mới được.</small></div>
           ${custom ? `<button type="button" class="btn" data-pubreset="${esc(c.id)}">Dùng lại cài đặt chung</button>` : ""}</div>
       </details>`;
     }).join("") : muted("Chưa có công ty nào. Công ty lập ở thẻ Công ty bên dưới hoặc khi tạo ca sẽ tự hiện ở đây.")}
@@ -3657,7 +3712,7 @@ function renderTasks() {
   const all = allTasks().filter(t => !t.shared || t.shared.list).filter(visible);
   // Mỗi việc một dòng như brief trang 9 và 11: ngày, việc, khách, trạng thái. Công ty đã lọc bằng tab ở trên.
   const rows = all.filter(t => tab === "all" || canonCo(t.companyId) === tab)
-    .flatMap(t => taskCrew(t).flatMap(w => w.items.map(it => ({ t, it, w }))))
+    .flatMap(t => taskCrew(t).flatMap(w => w.items.map(it => ({ t, it, w }))).map((r, n) => Object.assign(r, { n })))
     .filter(r => {
       if (state.taskOnly === "done" && !r.it.done) return false;
       if (state.taskOnly === "pending" && r.it.done) return false;
@@ -3696,7 +3751,7 @@ function renderTasks() {
             <td class="tk-w">${workerName(r.w) ? `<span translate="no">${esc(workerName(r.w))}</span>` : muted("—")}</td>
             <td class="tk-c">${r.it.clientId ? `<button type="button" class="it-cl" data-openclient="${r.it.clientId}" title="Mở hồ sơ khách">${esc((cl(r.it.clientId) || {}).name || "Khách")}</button>` : muted("—")}</td>
             ${showCo ? `<td class="tk-cc"><span class="tk-co"><i class="swatch" style="background:${coColor(r.t.companyId)}"></i>${esc(coName(r.t.companyId))}</span></td>` : ""}
-            <td class="tk-s">${statusSel(r.t.id, r.it.id, r.it.done, !!r.t.shared)}</td>
+            <td class="tk-s">${statusSel(r.t.id, r.it.id, r.it.done, !canEdit(r.t))}</td>
             <td class="tk-go"><button type="button" class="btn icon ghost" data-task="${r.t.id}" title="Chi tiết ca" aria-label="Chi tiết ca">↗</button></td>
           </tr>`).join("")}</tbody></table></div>${pagerHTML(page, pages, rows.length, PER)}`
         : `<div class="empty"><b>Chưa có việc nào ở đây.</b>Thêm ca làm ở tab Lịch, mục Lịch làm việc.</div>`}
@@ -3711,8 +3766,9 @@ const TASK_SORTS = [["new", "Ngày mới nhất trước"], ["old", "Ngày cũ n
 const taskSort = () => { try { const v = localStorage.getItem("cakip.taskSort"); return TASK_SORTS.some(x => x[0] === v) ? v : "new"; } catch (e) { return "new"; } };
 function taskSorter() {
   const v = taskSort(), coll = new Intl.Collator("vi", { sensitivity: "base", numeric: true });
-  const byDate = (x, y) => y.t.date.localeCompare(x.t.date) || toMin(x.t.start) - toMin(y.t.start);
-  if (v === "old") return (x, y) => x.t.date.localeCompare(y.t.date) || toMin(x.t.start) - toMin(y.t.start);
+  // cùng một ca: việc thêm sau (đứng sau trong ca) hiện trước; "cũ nhất trước" thì theo thứ tự thêm
+  const byDate = (x, y) => y.t.date.localeCompare(x.t.date) || toMin(x.t.start) - toMin(y.t.start) || (x.t === y.t ? y.n - x.n : 0);
+  if (v === "old") return (x, y) => x.t.date.localeCompare(y.t.date) || toMin(x.t.start) - toMin(y.t.start) || (x.t === y.t ? x.n - y.n : 0);
   if (v === "az" || v === "za") return (x, y) => (v === "az" ? 1 : -1) * coll.compare((x.it.text || "").trim(), (y.it.text || "").trim()) || byDate(x, y);
   return byDate;
 }
@@ -4626,12 +4682,17 @@ function clientChoices() {
     if (x) { if (seen.has(x.id)) return; seen.add(x.id); out.push({ id: x.id, name: lbl(x, x.name) }); }
     else if (!k.shared) out.push({ id: "case:" + k.id, name: caseName(k) });
   });
-  state.clients.concat(SH().clients).forEach(c => { if (!seen.has(c.id)) { seen.add(c.id); out.push({ id: c.id, name: lbl(c, c.name) }); } });
+  state.clients.concat(SH().clients).forEach(c => { if (!seen.has(c.id) && (c.name || "").trim()) { seen.add(c.id); out.push({ id: c.id, name: lbl(c, c.name) }); } });
   return out;
 }
 const clientOptsHTML = (sel, newLabel) => `<option value="">— chưa gán khách —</option>` +
   clientChoices().map(o => `<option value="${esc(o.id)}" ${o.id === sel ? "selected" : ""}>${esc(o.name)}</option>`).join("") +
   `<option value="__new">+ ${newLabel}</option>`;
+// Mỗi hồ sơ có luôn một khách (bảng clients) mang tên người vay, chưa có công ty; chọn vào ca thì khách nhận công ty của ca.
+function makeCaseClient(k) {
+  const c = put("clients", { name: loanPeople(k).length ? caseName(k) : "", companyId: "", caseId: k.id }, true);
+  return put("loanCases", Object.assign(cloneCase(k), { clientId: c.id }), true);
+}
 // Chọn một hồ sơ chưa có khách trên lịch: tạo khách mang tên người vay và gắn vào hồ sơ đó.
 function ensureCaseClient(caseId, companyId) {
   const k = state.loanCases.find(x => x.id === caseId);
@@ -4688,7 +4749,8 @@ function renderLoan() {
       ${casePickHTML(c)}
       <button class="btn" id="loanNew">+ Hồ sơ mới</button>
       <div class="spacer"></div>
-      ${c && c.shared ? `<span class="ro-note"><span class="lbl">Chỉ xem</span></span><button class="btn" id="loanCopy">Sao chép danh sách chứng từ</button>`
+      ${c && c.shared && canEdit(c) ? `<button class="btn" id="loanCopy">Sao chép danh sách chứng từ</button><button class="btn danger" data-loan-del="${c.id}">Xoá hồ sơ</button>`
+        : c && c.shared ? `<span class="ro-note"><span class="lbl">Chỉ xem</span></span><button class="btn" id="loanCopy">Sao chép danh sách chứng từ</button>`
         : c ? `<button class="btn" data-lt="fields">Sửa form nhập liệu</button>
         <button class="btn" id="loanCopy">Sao chép danh sách chứng từ</button>
         <button class="btn danger" data-loan-del="${c.id}">Xoá hồ sơ</button>` : ""}
@@ -4699,11 +4761,21 @@ function renderLoan() {
   }
   body.innerHTML = html;
   // hồ sơ của người khác: khoá mọi ô nhập, chỉ còn xem và mở link
-  if (c && c.shared) {
+  if (c && c.shared && canEdit(c)) { const s0 = $("#caseClient"); if (s0) { s0.disabled = true; s0.title = "Khách của hồ sơ do chủ tài khoản gắn"; } }
+  if (c && !canEdit(c)) {
     body.querySelectorAll("input, textarea, select:not(#casePick)").forEach(e => { e.disabled = true; e.title = "Chỉ xem"; });
     body.querySelectorAll("button:not(#loanNew):not(#loanCopy):not([data-stageall]), .ms-box .ms-x, .chip-x").forEach(e => { e.hidden = true; });
     body.querySelectorAll(".ms-box").forEach(e => { e.style.pointerEvents = "none"; });
   }
+}
+// Nút Chia sẻ / Riêng tư ở Master Data: hồ sơ chưa đủ điều kiện chia sẻ (cột public của khách trên Supabase) thì chủ
+// chia sẻ tay được (public_manual = true); bấm Riêng tư là bỏ chia sẻ tay, về theo cài đặt chia sẻ của công ty.
+function shareBtnHTML(c) {
+  if (c.shared || auth.mode !== "app") return "";
+  const x = cl(caseClientId(c));
+  if (!x || x.public === undefined) return "";
+  if (x.publicManual === true) return `<button class="btn" data-case-share="${esc(x.id)}" data-on="0" title="Bỏ chia sẻ tay, về theo cài đặt chia sẻ của công ty">Riêng tư</button>`;
+  return x.public ? "" : `<button class="btn" data-case-share="${esc(x.id)}" data-on="1" title="Cho tài khoản khác đã đăng nhập xem hồ sơ này">Chia sẻ</button>`;
 }
 const caseName = k => { const p = loanPeople(k); return p.length ? p.map(x => x.name).join(" & ") : "(chưa nhập tên)"; };
 // Ô chọn khách ở đầu trang Client's Profile, mới nhất lên trước như Master Data.
@@ -4775,7 +4847,7 @@ function casesHTML() {
         <td class="r num md-f" data-label="${esc(L("Chứng từ"))}">${docs.length ? `${got}/${docs.length}` : "—"}</td>
         <td class="r num md-f" data-label="${esc(L("Công việc"))}">${jobs.length ? `${jobs.filter(j => j.x.done).length}/${jobs.length}` : "—"}</td>
         <td class="num md-f" data-label="${esc(L("Ngày tạo"))}">${d ? `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}` : "—"}</td>
-        <td class="md-opt">${c.shared ? `<span class="lbl">Chỉ xem</span>` : `<div style="display:flex;gap:6px"><button class="btn" data-loan-clone="${c.id}" title="Nhân bản hồ sơ này">Nhân bản</button>
+        <td class="md-opt">${!canEdit(c) ? `<span class="lbl">Chỉ xem</span>` : `<div style="display:flex;gap:6px">${c.shared ? "" : `<button class="btn" data-loan-clone="${c.id}" title="Nhân bản hồ sơ này">Nhân bản</button>`}${shareBtnHTML(c)}
           <button class="btn danger" data-loan-del="${c.id}">Xoá</button></div>`}</td>
       </tr>`;
   }).join("")}</tbody></table></div></div></div>`;
@@ -4873,8 +4945,9 @@ function caseJobs(c) {
   const cid = caseClientId(c);
   if (!cid) return [];
   return allTasks().filter(t => (!t.shared || t.shared.list) && taskClients(t).includes(cid))
-    .flatMap(t => taskItems(t).filter(x => x.clientId === cid).map(x => ({ t, x })))
-    .sort((a, b) => b.t.date.localeCompare(a.t.date) || toMin(b.t.start) - toMin(a.t.start));
+    .flatMap(t => taskItems(t).map((x, n) => ({ t, x, n })).filter(j => j.x.clientId === cid))
+    // mới nhất trước; cùng một ca thì việc thêm sau hiện trước
+    .sort((a, b) => b.t.date.localeCompare(a.t.date) || toMin(b.t.start) - toMin(a.t.start) || (a.t === b.t ? b.n - a.n : 0));
 }
 const dmy = d => { const x = parseISO(d); return `${pad(x.getDate())}/${pad(x.getMonth() + 1)}/${x.getFullYear()}`; };
 // Thẻ Tasks trong hồ sơ: việc thêm ở lịch tự hiện lại đây, không phải nhập lại.
@@ -4887,7 +4960,7 @@ function caseTasksHTML(c) {
       <div class="spacer"></div>
       <select id="caseClient" data-search class="mini" style="width:auto;min-width:200px" aria-label="Khách hàng trên lịch">
         <option value="">— chưa gắn khách trên lịch —</option>
-        ${(c.shared ? SH().clients.filter(x => x.id === cid) : state.clients).map(x => `<option value="${x.id}" ${x.id === cid ? "selected" : ""}>${esc(x.name)}</option>`).join("")}
+        ${(c.shared ? SH().clients.filter(x => x.id === cid) : state.clients.filter(x => (x.name || "").trim() || x.id === cid)).map(x => `<option value="${x.id}" ${x.id === cid ? "selected" : ""}>${esc(x.name)}</option>`).join("")}
         <option value="__new">+ Tạo khách hàng theo tên người vay</option>
       </select></div>
     <div class="card-b">
@@ -5068,7 +5141,7 @@ function loanOutHTML(c) {
         <div class="stage-bar"><i style="width:${n ? k / n * 100 : 0}%"></i></div>
         ${s.groups.map(g => `<div class="sg">
           <div class="sg-h"><b>${esc(g.group.title)}</b>${g.group.sub ? `<small>${esc(g.group.sub)}</small>` : ""}</div>
-          <ul class="docs">${g.docs.map(d => { const pubL = odIsPublic(c, d.key), u = pubMode() && !pubL ? "" : odLinkOf(c, d.key), ro = pubMode() || !!c.shared; return `<li><div class="doc-row"><label class="doc ${got[d.key] ? "got" : ""}">
+          <ul class="docs">${g.docs.map(d => { const pubL = odIsPublic(c, d.key), u = pubMode() && !pubL ? "" : odLinkOf(c, d.key), ro = pubMode() || !canEdit(c); return `<li><div class="doc-row"><label class="doc ${got[d.key] ? "got" : ""}">
             <input type="checkbox" data-doc="${esc(d.key)}" ${got[d.key] ? "checked" : ""}><span data-docname="${esc(d.key)}">${docHTML(d.rule)}</span>
           </label>${u ? `<a class="od-btn go ${pubL && !pubMode() ? "pub" : ""}" href="${esc(u)}" target="_blank" rel="noopener noreferrer" title="${pubL && !pubMode() ? "Mở trên OneDrive · công khai cho tài khoản khác" : "Mở trên OneDrive"}" aria-label="Mở trên OneDrive">${OD_GO}</a>` : ""}${ro ? ""
             : `<button type="button" class="od-btn add" data-odlink="${esc(d.key)}" title="${u ? "Sửa link OneDrive" : "Gắn link OneDrive"}" aria-label="${u ? "Sửa link OneDrive" : "Gắn link OneDrive"}">${OD_LINK}</button>`}</div></li>`; }).join("")}</ul>
@@ -6032,7 +6105,7 @@ function loanClick(e) {
 
   // hồ sơ
   if ((b = q("#loanNew"))) {
-    const c = put("loanCases", { createdAt: new Date().toISOString(), borrowers: [{ name: "", values: {} }], guarantor: null, values: {}, received: {} }, true);
+    const c = makeCaseClient(put("loanCases", { createdAt: new Date().toISOString(), borrowers: [{ name: "", values: {} }], guarantor: null, values: {}, received: {} }, true));
     state.loanOpen = c.id; state.loanPage = "loan"; state.loanTab = "cases"; navRender();
     const f = $('[data-lf="b0"]'); if (f) f.focus();
     return true;
@@ -6047,13 +6120,24 @@ function loanClick(e) {
     c.clientId = "";                     // chọn lại khách trên lịch cho bản sao
     const first = Object.keys(c.people || {})[0];
     if (first && (c.people[first].name || "").trim()) c.people[first].name += state.lang === "en" ? " (copy)" : " (bản sao)";
-    const made = put("loanCases", c, true);
+    const made = makeCaseClient(put("loanCases", c, true));   // bản sao có khách riêng
     state.loanOpen = made.id; state.loanPage = "loan"; state.loanTab = "cases"; navRender(); $("#view-loan").scrollTop = 0;
     return true;
   }
+  if ((b = q("[data-case-share]"))) {
+    const x = cl(b.dataset.caseShare), on = b.dataset.on === "1";
+    if (!x || isShared(x.id)) return true;
+    const prev = { public: x.public, publicManual: x.publicManual };
+    Object.assign(x, { public: on, publicManual: on ? true : undefined });
+    navRender();
+    sbq(auth.sb.rpc("set_client_share", { p_id: x.id, p_share: on }))
+      .then(v => { x.public = !!v; navRender(); setStatus(true, on ? "Đã chia sẻ hồ sơ cho tài khoản khác" : "Đã bỏ chia sẻ tay hồ sơ này"); })
+      .catch(e => { Object.assign(x, prev); navRender(); setStatus(false, "Chưa lưu được: " + sbErrText(e)); });
+    return true;
+  }
   if ((b = q("[data-loan-del]"))) {
-    const id = b.dataset.loanDel, c = state.loanCases.find(x => x.id === id);
-    if (!c) return true;
+    const id = b.dataset.loanDel, c = allCases().find(x => x.id === id);
+    if (!c || !canEdit(c)) return true;
     askDeleteCase(c).then(mode => {
       if (!mode) return;
       if (state.loanOpen === id) state.loanOpen = null;
@@ -6061,7 +6145,12 @@ function loanClick(e) {
       drop("loanCases", id);
       if (mode === "all" && cid && cl(cid)) {
         // việc trong ca vẫn giữ (giờ làm, lương không đổi), chỉ bỏ tên khách
-        state.tasks.filter(t => taskClients(t).includes(cid)).forEach(t => {
+        // hồ sơ của tài khoản khác: máy chủ tự bỏ tên khách khỏi các việc khi xoá khách, ở đây chỉ sửa bản đang hiện
+        if (c.shared) SH().tasks.filter(t => t.shared.k === c.shared.k && taskClients(t).includes(cid)).forEach(t => {
+          t.crew = taskCrew(t).map(w => Object.assign({}, w, { items: w.items.map(x => (x.clientId === cid ? Object.assign({}, x, { clientId: "" }) : x)) }));
+          t.items = (t.crew[0] || {}).items || []; if (t.clientId === cid) t.clientId = "";
+        });
+        else state.tasks.filter(t => taskClients(t).includes(cid)).forEach(t => {
           const crew = taskCrew(t).map(w => Object.assign({}, w, { items: w.items.map(x => (x.clientId === cid ? Object.assign({}, x, { clientId: "" }) : x)) }));
           put("tasks", Object.assign({}, t, { crew, items: (crew[0] || {}).items || [], clientId: t.clientId === cid ? "" : t.clientId || "" }), true);
         });
@@ -6318,12 +6407,19 @@ function loanChange(e) {
   // hồ sơ: gắn với khách hàng trên lịch
   if (el.id === "caseClient") {
     const c = cloneCase(curCase());
-    if (el.value !== "__new") { c.clientId = el.value; saveCase(c); navRender(); return true; }
+    // gắn sang khách khác: khách riêng của hồ sơ (tạo kèm hồ sơ) chưa có việc nào thì bỏ, khỏi thành khách trùng tên
+    const relink = to => {
+      const old = cl(caseClientId(c));
+      c.clientId = to; saveCase(c);
+      const nx = to && cl(to);
+      if (nx && !nx.caseId) put("clients", Object.assign({}, nx, { caseId: c.id }), true);
+      if (old && old.id !== to && old.caseId === c.id && !state.tasks.some(t => taskClients(t).includes(old.id))) drop("clients", old.id);
+    };
+    if (el.value !== "__new") { relink(el.value); navRender(); return true; }
     const nm = (loanPeople(c)[0] || {}).name || "";
     askText("Khách hàng mới", "Tên khách hàng trên lịch", "Tạo khách").then(name => {
-      const c2 = cloneCase(curCase());
-      c2.clientId = name ? put("clients", { name, companyId: "" }, true).id : caseClientId(c2);
-      saveCase(c2); navRender();
+      if (name) relink(put("clients", { name, companyId: "", caseId: c.id }, true).id);
+      navRender();
     });
     const inp = $("[data-in]"); if (inp && nm) { inp.value = nm; inp.select(); }
     return true;
@@ -6682,8 +6778,8 @@ function openTask(t) {
           <div class="f"><label>Công ty</label>
             <select id="tCo">
               <option value="">— chưa gán —</option>
-              ${uniqCos(t.companyId).map(c => `<option value="${c.id}" ${c.id === t.companyId ? "selected" : ""}>${esc(c.name)}</option>`).join("")}
-              <option value="__new">+ Thêm công ty mới…</option>
+              ${(t.shared ? SH().companies.filter(c => c.shared.k === t.shared.k && (c.id === t.companyId || (c.shared.edit && c.shared.edit.tasks))) : uniqCos(t.companyId)).map(c => `<option value="${c.id}" ${c.id === t.companyId ? "selected" : ""}>${esc(c.name)}</option>`).join("")}
+              ${t.shared ? "" : `<option value="__new">+ Thêm công ty mới…</option>`}
             </select>
             <div class="inline-add hide" id="coNew">
               <input class="nm" placeholder="Tên công ty">
@@ -6744,8 +6840,9 @@ function openTask(t) {
         </div>` : ""}
       </div>
       <div class="modal-f">
-        ${isNew ? `<span></span>` : `<button class="btn danger" id="mDel">Xoá ca làm</button>`}
-        <button class="btn primary" id="mSave">${isNew ? "Tạo ca làm" : "Lưu thay đổi"}</button>
+        ${isNew ? `<span></span>` : `<button class="btn danger" id="mDel" ${canEdit(t) ? "" : "hidden"}>Xoá ca làm</button>`}
+        ${canEdit(t) ? "" : `<span class="lbl">Chỉ xem</span>`}
+        <button class="btn primary" id="mSave" ${canEdit(t) ? "" : "hidden"}>${isNew ? "Tạo ca làm" : "Lưu thay đổi"}</button>
       </div>
     </div>
   </div>`;
@@ -6753,8 +6850,11 @@ function openTask(t) {
   // Người làm trong ca. Mỗi người có danh sách việc riêng, như slide 21.
   let crew = taskCrew(t);
   if (!crew.length) crew = [{ id: uid(), personId: state.me || "", items: [] }];
-  const clientOpts = sel => clientOptsHTML(sel, "Thêm khách hàng mới…");
-  const peopleOpts = sel => workerOptsHTML(sel, "__newpe", "Thêm người làm mới…");
+  // ca của tài khoản khác: chỉ chọn người làm, khách của chính tài khoản đó
+  const packOpts = (list, sel, none) => `<option value="">${none}</option>` + list.map(x => `<option value="${esc(x.id)}" ${x.id === sel ? "selected" : ""}>${esc(x.name)}</option>`).join("");
+  const own = list => list.filter(x => x.shared && t.shared && x.shared.k === t.shared.k);
+  const clientOpts = sel => t.shared ? packOpts(own(SH().clients), sel, "— chưa gán khách —") : clientOptsHTML(sel, "Thêm khách hàng mới…");
+  const peopleOpts = sel => t.shared ? packOpts(own(SH().people), sel, "— chưa gán người —") : workerOptsHTML(sel, "__newpe", "Thêm người làm mới…");
   const drawItems = () => {
     if (typeof drawSum === "function") setTimeout(drawSum, 0);
     const box = $("#tCrew");
@@ -6844,13 +6944,13 @@ function openTask(t) {
     const items = crew.flatMap(w => w.items);
     const ids = [...new Set(items.map(x => x.clientId).filter(Boolean))];
     const line = id => {
-      const kase = state.loanCases.find(x => caseClientId(x) === id);
-      const info = kase ? caseSummary(kase, sc.fields) : "";
+      const kase = (t.shared ? SH().loanCases.filter(x => x.shared.k === t.shared.k) : state.loanCases).find(x => caseClientId(x) === id);
+      const info = kase ? (kase.shared ? asOwner(kase, () => caseSummary(kase, loanSchema().fields)) : caseSummary(kase, sc.fields)) : "";
       return `<div class="sum-cl">
         <b>${esc((cl(id) || {}).name || "Khách")}</b>
         <span>${esc(info || (kase ? "hồ sơ chưa nhập thông tin" : "chưa có hồ sơ vay"))}</span>
         ${kase ? `<button type="button" class="btn" data-opencase="${kase.id}">Mở hồ sơ</button>`
-        : `<button type="button" class="btn" data-newcase="${id}">Tạo hồ sơ</button>`}
+        : t.shared ? "" : `<button type="button" class="btn" data-newcase="${id}">Tạo hồ sơ</button>`}
       </div>`;
     };
     const cnt = $("#tTasksCount");
@@ -7160,7 +7260,7 @@ function askConfirm(title, body, okLabel) {
 function askDeleteCase(c) {
   return new Promise(resolve => {
     const cid = caseClientId(c), who = loanPeople(c).map(p => p.name).join(" & ") || (cl(cid) || {}).name || "";
-    const jobs = cid ? state.tasks.filter(t => taskClients(t).includes(cid)) : [];
+    const jobs = cid ? (c.shared ? SH().tasks.filter(t => t.shared.k === c.shared.k) : state.tasks).filter(t => taskClients(t).includes(cid)) : [];
     const n = jobs.reduce((a, t) => a + taskItems(t).filter(x => x.clientId === cid).length, 0);
     const days = [...new Set(jobs.map(t => t.date))].sort().map(d => dmy(d).slice(0, 5));
     const host = document.createElement("div");
@@ -7395,8 +7495,8 @@ document.addEventListener("click", e => {
   const ti = e.target.closest("[data-toggleitem]");
   if (ti) {
     const [tid, iid] = ti.dataset.toggleitem.split("|");
-    const t0 = state.tasks.find(x => x.id === tid);
-    if (t0) setItemDone(tid, iid, !taskItems(t0).concat(taskCrew(t0).flatMap(w => w.items)).some(x => x.id === iid && x.done));
+    const t0 = allTasks().find(x => x.id === tid);
+    if (t0 && canEdit(t0)) setItemDone(tid, iid, !taskItems(t0).concat(taskCrew(t0).flatMap(w => w.items)).some(x => x.id === iid && x.done));
     return;
   }
   const ev = e.target.closest("[data-task]");
@@ -8122,7 +8222,12 @@ Object.assign(EN, {
   "Dấu đã nhận chứng từ và link OneDrive của hồ sơ cũng bị xoá, không lấy lại được.": "The file's received-document ticks and OneDrive links are deleted too. This cannot be undone.",
   "Mới tạo trước": "Newest first", "Cũ trước": "Oldest first", "Tên khách A→Z": "Client name A→Z", "Tên khách Z→A": "Client name Z→A", "Sắp xếp": "Sort",
   "Bấm để sắp xếp theo tên": "Click to sort by name", "Bấm để sắp xếp theo ngày tạo": "Click to sort by date created",
-  "Chia sẻ theo công ty": "Sharing by company", "Lịch chung": "Shared calendar", "Tài khoản khác được xem": "Other accounts can see",
+  "Chia sẻ theo công ty": "Sharing by company", "Lịch chung": "Shared calendar", "Tài khoản khác được xem": "Other accounts can see", "Tài khoản khác được sửa": "Other accounts can edit", "Chia sẻ": "Share", "Riêng tư": "Private",
+  "Bỏ chia sẻ tay, về theo cài đặt chia sẻ của công ty": "Stop sharing by hand; follow the company's sharing settings",
+  "Cho tài khoản khác đã đăng nhập xem hồ sơ này": "Let other logged-in accounts see this file",
+  "Đã chia sẻ hồ sơ cho tài khoản khác": "File shared with other accounts", "Đã bỏ chia sẻ tay hồ sơ này": "Stopped sharing this file by hand",
+  "Tài khoản đã đăng nhập xem, sửa và xoá được ca làm, hồ sơ đã có của công ty này; không tạo mới được.": "Logged-in accounts can view, edit and delete existing tasks and client files of this company, but not create new ones.",
+  "Đang cho sửa nên cũng xem được": "Editing is on, so viewing is on too", "Khách của hồ sơ do chủ tài khoản gắn": "Only the file owner can change its client",
   "Công việc (Tasks) của công ty này": "Tasks of this company", "Hồ sơ khách & Master Data của công ty này": "Client files & Master Data of this company",
   "Kỳ lương của tôi ở công ty này": "My pay period at this company", "Chỉ tài khoản đã đăng nhập thấy. Họ chỉ xem, không sửa được.": "Only logged-in accounts see this. They can view but not edit.",
   "Chỉ xem": "View only", "Chia sẻ kỳ lương": "Shared pay periods", "Chỉ xem: việc của người khác": "View only: someone else's task", "Tiêu đề & định nghĩa": "Title & definition", "Chỉ tiêu đề": "Title only", "Tìm trong tiêu đề": "Search titles",
@@ -8144,7 +8249,8 @@ Object.assign(EN, {
 EN_RE.unshift(
   [/^(\d+)–(\d+) \/ (\d+) việc$/, "$1–$2 of $3 tasks"], [/^Trang (\d+)$/, "Page $1"],
   [/^Có (\d+) bản ghi đang lưu trên máy này nhưng chưa có trong tài khoản\.$/, "$1 records are saved on this device but not in your account yet."],
-  [/^Chưa lưu được: (.+)$/, "Not saved: $1"], [/^Đã xoá ca của (.+)$/, "Deleted the shift of $1"], [/^Công ty của (.+)$/, "$1's company"], [/^Xoá hồ sơ (.+)\?$/, "Delete the file of $1?"],
+  [/^Chưa lưu được: (.+)$/, "Not saved: $1"], [/^Đã xoá ca của (.+)$/, "Deleted the shift of $1"], [/^Đã lưu vào tài khoản (.+)$/, "Saved to $1's account"],
+  [/^Đã xoá trong tài khoản (.+)$/, "Deleted in $1's account"], [/^Chưa xoá được: (.+)$/, "Not deleted: $1"], [/^Công ty của (.+)$/, "$1's company"], [/^Xoá hồ sơ (.+)\?$/, "Delete the file of $1?"],
   [/^Khách này đang gắn với (\d+) việc trong (\d+) ca \((.+)\)\.$/, "This client is on $1 tasks in $2 shifts ($3)."],
   [/^Chỉ (.+) sửa được dữ liệu này$/, "Only $1 can edit this"], [/^của (.+)$/, "by $1"], [/^(.+) · chia sẻ$/, "$1 · shared"], [/^(.+) · của (.+)$/, "$1 · by $2"], [/^(\d+)–(\d+) \/ (\d+) mục$/, "$1–$2 of $3 entries"], [/^Chỉ hồ sơ của (.+) có link này$/, "Only $1's file has this link"], [/^Đã có công ty (.+)$/, "Company $1 already exists"],
   [/^Xoá ca (\S+) ngày (\S+) của (.+)\? Ca và mọi việc trong ca mất khỏi tài khoản của người đó, không lấy lại được\.$/,
