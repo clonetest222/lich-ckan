@@ -1858,6 +1858,7 @@ function sharedDenied(coll, id) {
   setTimeout(render, 0);   // trả màn hình về như cũ
 }
 function put(coll, obj, quiet) {
+  if (coll === "glossary" && remote && glossOther(obj.id)) return glossPut(obj, quiet);
   if (isShared(obj.id)) { if (sharedEditable(coll, obj.id)) return sharedPut(coll, obj, quiet); sharedDenied(coll, obj.id); return obj; }
   if (!obj.id) obj.id = uid();
   if (pubLock()) return obj;
@@ -1881,6 +1882,7 @@ function syncTaskClients(t) {
   return n > 0;
 }
 function drop(coll, id) {
+  if (coll === "glossary" && remote && glossOther(id)) return glossDrop(id);
   if (isShared(id)) { if (sharedEditable(coll, id)) return sharedDrop(coll, id); sharedDenied(coll, id); return; }
   if (pubLock()) return;
   state[coll] = state[coll].filter(x => x.id !== id);
@@ -2009,7 +2011,7 @@ async function enterApp(session) {
     const selfPid = ensureSelfWorker(prof);
     // mỗi tài khoản là một người làm: mặc định "Tôi" là chính tài khoản, trừ khi đã chọn người khác ở Thiết lập
     state.me = prof.person_id && pe(prof.person_id) ? prof.person_id : selfPid;
-    loadWorkers();
+    loadWorkers(); loadGlossary();
     auth.shared = null; loadShared();
     setStatus(true, "Đã đồng bộ · " + (prof.display_name || prof.email));
     subscribeDocs();
@@ -2034,7 +2036,34 @@ const TABLE_COLL = {
 const sbReloadT = {};
 // Máy khác (cùng tài khoản) đổi dữ liệu: tải lại đúng loại đó rồi vẽ lại. Tín hiệu do chính máy này
 // vừa ghi thì bỏ qua, để bản đang sửa trên màn hình không bị bản cũ hơn đè lên.
+// Thuật ngữ dùng chung: mọi tài khoản đã đăng nhập xem, thêm, sửa, xoá được mọi mục (glossary_all trên Supabase).
+// Mục của tài khoản khác có mã "go:<chủ>:<mã>" và trường owner; mục của mình giữ mã gốc. Chưa có hàm thì chỉ thấy của mình.
+async function loadGlossary() {
+  if (auth.mode !== "app") return;
+  let rows;
+  try { rows = await sbq(auth.sb.rpc("glossary_all", {})); } catch (e) { return; }
+  if (auth.mode !== "app" || !Array.isArray(rows) || Object.keys(sbQueue).some(k => k.startsWith("glossary/") || k.startsWith("go:"))) return;
+  const me = myId();
+  state.glossary = rows.map(g => (g.owner === me ? Object.assign({}, g, { owner: undefined }) : Object.assign({}, g, { id: "go:" + g.owner + ":" + g.id })));
+  if (state.view === "glossary") renderGlossary();
+}
+const glossOther = id => /^go:([^:]+):(.+)$/.exec(String(id || ""));
+function glossPut(obj, quiet) {
+  const m = glossOther(obj.id), i = state.glossary.findIndex(x => x.id === obj.id);
+  if (i >= 0) state.glossary[i] = obj; else state.glossary.push(obj);
+  if (!quiet) render();
+  const { id, owner, ...body } = obj;
+  sbSerial("go:" + obj.id, "glossary", () => sbq(auth.sb.rpc("glossary_save", { p_owner: m[1], p_id: m[2], p_doc: body }))).catch(e => { dbErr(e); loadGlossary(); });
+  return obj;
+}
+function glossDrop(id) {
+  const m = glossOther(id);
+  state.glossary = state.glossary.filter(x => x.id !== id);
+  render();
+  sbSerial("go:" + id, "glossary", () => sbq(auth.sb.rpc("glossary_delete", { p_owner: m[1], p_id: m[2] }))).catch(e => { dbErr(e); loadGlossary(); });
+}
 function reloadColl(c) {
+  if (c === "glossary") { clearTimeout(sbReloadT[c]); sbReloadT[c] = setTimeout(loadGlossary, 300); return; }
   clearTimeout(sbReloadT[c]);
   sbReloadT[c] = setTimeout(async () => {
     if (auth.mode !== "app" || Object.keys(sbQueue).some(k => k.startsWith(c + "/"))) return;
@@ -2817,6 +2846,7 @@ function setView(v) {
   closeQuick(); closePalette(); closeColMenu();
   if (auth.mode === "public" && PUB_HIDDEN.includes(v)) v = "cal";   // bản xem công khai không có các trang này
   state.view = v;
+  if (v === "glossary") loadGlossary();   // lấy thay đổi mới của các tài khoản khác
   if (CAL_SUB.includes(v)) state.calSub = v;
   markTabs();
   $("#subTabsBar").classList.toggle("hide", !CAL_SUB.includes(v));
