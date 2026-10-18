@@ -1723,7 +1723,7 @@ function unprefix(v, prefix) {
   if (v && typeof v === "object") { const o = {}; Object.keys(v).forEach(k => { if (k !== "shared") o[k] = unprefix(v[k], prefix); }); return o; }
   return v;
 }
-const EDIT_RPC = { save: "shared_save_doc", del: "shared_delete_doc" };
+const EDIT_RPC = { save: "shared_save_doc", del: "shared_delete_doc", clone: "shared_clone_case" };
 // Lưu, xoá thẳng vào tài khoản chủ; máy chủ kiểm lại quyền, không được thì tải lại phần chia sẻ.
 function sharedPut(coll, obj, quiet) {
   const ap = packOf(obj.id), arr = SH()[coll], i = arr.findIndex(x => x.id === obj.id), who = arr[i].shared;
@@ -2535,7 +2535,7 @@ function pubCompaniesHTML() {
             <small style="color:var(--muted);font-size:12px">Chỉ tài khoản đã đăng nhập thấy. Họ chỉ xem, không sửa được.</small></div>
           <div class="share-grp"><div class="lbl">Tài khoản khác được sửa</div><div class="pub-toggles">${EDIT_KEYS.map(([k, n]) =>
             `<label class="chk"><input type="checkbox" data-pub="${k}" data-pubco="${esc(c.id)}" ${pubVal(c.id, k) ? "checked" : ""}><span class="t">${n}</span></label>`).join("")}</div>
-            <small style="color:var(--muted);font-size:12px">Tài khoản đã đăng nhập xem, sửa và xoá được ca làm, hồ sơ đã có của công ty này; không tạo mới được.</small></div>
+            <small style="color:var(--muted);font-size:12px">Tài khoản đã đăng nhập xem, sửa, xoá được ca làm, hồ sơ đã có của công ty này và nhân bản được hồ sơ; không tạo mới được.</small></div>
           ${custom ? `<button type="button" class="btn" data-pubreset="${esc(c.id)}">Dùng lại cài đặt chung</button>` : ""}</div>
       </details>`;
     }).join("") : muted("Chưa có công ty nào. Công ty lập ở thẻ Công ty bên dưới hoặc khi tạo ca sẽ tự hiện ở đây.")}
@@ -4841,7 +4841,7 @@ function casesHTML() {
         <td class="r num md-f" data-label="${esc(L("Chứng từ"))}">${docs.length ? `${got}/${docs.length}` : "—"}</td>
         <td class="r num md-f" data-label="${esc(L("Công việc"))}">${jobs.length ? `${jobs.filter(j => j.x.done).length}/${jobs.length}` : "—"}</td>
         <td class="num md-f" data-label="${esc(L("Ngày tạo"))}">${d ? `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}` : "—"}</td>
-        <td class="md-opt">${!canEdit(c) ? `<span class="lbl">Chỉ xem</span>` : `<div style="display:flex;gap:6px">${c.shared ? "" : `<button class="btn" data-loan-clone="${c.id}" title="Nhân bản hồ sơ này">Nhân bản</button>`}${shareBtnHTML(c)}
+        <td class="md-opt">${!canEdit(c) ? `<span class="lbl">Chỉ xem</span>` : `<div style="display:flex;gap:6px"><button class="btn" data-loan-clone="${c.id}" title="Nhân bản hồ sơ này">Nhân bản</button>${shareBtnHTML(c)}
           <button class="btn danger" data-loan-del="${c.id}">Xoá</button></div>`}</td>
       </tr>`;
   }).join("")}</tbody></table></div></div></div>`;
@@ -6105,8 +6105,8 @@ function loanClick(e) {
     return true;
   }
   if ((b = q("[data-loan-clone]"))) {
-    const src = state.loanCases.find(x => x.id === b.dataset.loanClone);
-    if (!src) return true;
+    const src = allCases().find(x => x.id === b.dataset.loanClone);
+    if (!src || !canEdit(src)) return true;
     const c = cloneCase(src);
     delete c.id;
     c.createdAt = new Date().toISOString();
@@ -6114,6 +6114,18 @@ function loanClick(e) {
     c.clientId = "";                     // chọn lại khách trên lịch cho bản sao
     const first = Object.keys(c.people || {})[0];
     if (first && (c.people[first].name || "").trim()) c.people[first].name += state.lang === "en" ? " (copy)" : " (bản sao)";
+    if (src.shared) {   // hồ sơ tài khoản khác cho sửa: nhân bản trong tài khoản chủ (khách mới cùng công ty), rồi mở bản sao
+      const ap = packOf(src.id), body = unprefix(c, ap.prefix), who = src.shared.name || "khác";
+      sbq(auth.sb.rpc(EDIT_RPC.clone, { p_owner: ap.owner, p_case: src.id.slice(ap.prefix.length), p_doc: body, p_name: asOwner(src, () => (loanPeople(c).length ? caseName(c) : "")) }))
+        .then(async r => {
+          await loadShared();
+          const k = Object.keys(auth.shared.owners || {}).find(i => auth.shared.owners[i] === ap.owner), nid = "sh:" + k + ":" + (r && r.caseId);
+          if (allCases().some(x => x.id === nid)) { state.loanOpen = nid; state.loanPage = "loan"; state.loanTab = "cases"; navRender(); $("#view-loan").scrollTop = 0; }
+          setStatus(true, "Đã nhân bản vào tài khoản " + who);
+        })
+        .catch(e => setStatus(false, "Chưa nhân bản được: " + sbErrText(e)));
+      return true;
+    }
     const made = makeCaseClient(put("loanCases", c, true));   // bản sao có khách riêng
     state.loanOpen = made.id; state.loanPage = "loan"; state.loanTab = "cases"; navRender(); $("#view-loan").scrollTop = 0;
     return true;
@@ -8220,7 +8232,7 @@ Object.assign(EN, {
   "Bỏ chia sẻ tay, về theo cài đặt chia sẻ của công ty": "Stop sharing by hand; follow the company's sharing settings",
   "Cho tài khoản khác đã đăng nhập xem hồ sơ này": "Let other logged-in accounts see this file",
   "Đã chia sẻ hồ sơ cho tài khoản khác": "File shared with other accounts", "Đã bỏ chia sẻ tay hồ sơ này": "Stopped sharing this file by hand",
-  "Tài khoản đã đăng nhập xem, sửa và xoá được ca làm, hồ sơ đã có của công ty này; không tạo mới được.": "Logged-in accounts can view, edit and delete existing tasks and client files of this company, but not create new ones.",
+  "Tài khoản đã đăng nhập xem, sửa, xoá được ca làm, hồ sơ đã có của công ty này và nhân bản được hồ sơ; không tạo mới được.": "Logged-in accounts can view, edit and delete existing tasks and client files of this company, and clone client files, but not create new ones.",
   "Đang cho sửa nên cũng xem được": "Editing is on, so viewing is on too", "Khách của hồ sơ do chủ tài khoản gắn": "Only the file owner can change its client",
   "Công việc (Tasks) của công ty này": "Tasks of this company", "Hồ sơ khách & Master Data của công ty này": "Client files & Master Data of this company",
   "Kỳ lương của tôi ở công ty này": "My pay period at this company", "Chỉ tài khoản đã đăng nhập thấy. Họ chỉ xem, không sửa được.": "Only logged-in accounts see this. They can view but not edit.",
@@ -8244,7 +8256,7 @@ EN_RE.unshift(
   [/^(\d+)–(\d+) \/ (\d+) việc$/, "$1–$2 of $3 tasks"], [/^Trang (\d+)$/, "Page $1"],
   [/^Có (\d+) bản ghi đang lưu trên máy này nhưng chưa có trong tài khoản\.$/, "$1 records are saved on this device but not in your account yet."],
   [/^Chưa lưu được: (.+)$/, "Not saved: $1"], [/^Đã xoá ca của (.+)$/, "Deleted the shift of $1"], [/^Đã lưu vào tài khoản (.+)$/, "Saved to $1's account"],
-  [/^Đã xoá trong tài khoản (.+)$/, "Deleted in $1's account"], [/^Chưa xoá được: (.+)$/, "Not deleted: $1"], [/^Công ty của (.+)$/, "$1's company"], [/^Xoá hồ sơ (.+)\?$/, "Delete the file of $1?"],
+  [/^Đã xoá trong tài khoản (.+)$/, "Deleted in $1's account"], [/^Chưa xoá được: (.+)$/, "Not deleted: $1"], [/^Đã nhân bản vào tài khoản (.+)$/, "Cloned into $1's account"], [/^Chưa nhân bản được: (.+)$/, "Not cloned: $1"], [/^Công ty của (.+)$/, "$1's company"], [/^Xoá hồ sơ (.+)\?$/, "Delete the file of $1?"],
   [/^Khách này đang gắn với (\d+) việc trong (\d+) ca \((.+)\)\.$/, "This client is on $1 tasks in $2 shifts ($3)."],
   [/^Chỉ (.+) sửa được dữ liệu này$/, "Only $1 can edit this"], [/^của (.+)$/, "by $1"], [/^(.+) · chia sẻ$/, "$1 · shared"], [/^(.+) · của (.+)$/, "$1 · by $2"], [/^(\d+)–(\d+) \/ (\d+) mục$/, "$1–$2 of $3 entries"], [/^Chỉ hồ sơ của (.+) có link này$/, "Only $1's file has this link"], [/^Đã có công ty (.+)$/, "Company $1 already exists"],
   [/^Xoá ca (\S+) ngày (\S+) của (.+)\? Ca và mọi việc trong ca mất khỏi tài khoản của người đó, không lấy lại được\.$/,
